@@ -15,6 +15,7 @@ function formatName(value: string) {
 export default function Home() {
   const [stage, setStage] = useState<'door' | 'welcome' | 'guest' | 'rsvp'>('door');
   const [scratched, setScratched] = useState(0);
+  const [doorOpened, setDoorOpened] = useState(false);
   const [name, setName] = useState('');
   const [guest, setGuest] = useState<{ name: string; role?: string; maxGuests: number } | null>(null);
   const [rsvp, setRsvp] = useState<'idle' | 'attending' | 'declined'>('idle');
@@ -74,8 +75,8 @@ export default function Home() {
         const percent = Math.round((transparent / total) * 100);
         setScratched(percent);
         if (percent >= 34) {
-          setStage('welcome');
-          setTimeout(() => canvas.remove(), 200);
+          setDoorOpened(true);
+          setTimeout(() => setStage('welcome'), 2200);
         }
       }, 80);
     }
@@ -114,17 +115,18 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grand-door left-door">
+            <div className={`grand-door left-door ${doorOpened ? "door-open" : ""}`}>
               <div className="door-panel" />
               <span className="door-handle">◈</span>
             </div>
-            <div className="grand-door right-door">
+            <div className={`grand-door right-door ${doorOpened ? "door-open" : ""}`}>
               <div className="door-panel" />
               <span className="door-handle">◈</span>
             </div>
 
             <canvas
               ref={canvasRef}
+              style={{ opacity: doorOpened ? 0 : 1 }}
               className="scratch-layer"
               onPointerDown={(e) => { drawingRef.current = true; e.currentTarget.setPointerCapture(e.pointerId); scratch(e); }}
               onPointerMove={scratch}
