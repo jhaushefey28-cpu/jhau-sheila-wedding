@@ -16,6 +16,7 @@ export default function Home() {
   const [stage, setStage] = useState<'door' | 'welcome' | 'guest' | 'rsvp'>('door');
   const [scratched, setScratched] = useState(0);
   const [doorOpened, setDoorOpened] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [name, setName] = useState('');
   const [guest, setGuest] = useState<{ name: string; role?: string; maxGuests: number } | null>(null);
   const [rsvp, setRsvp] = useState<'idle' | 'attending' | 'declined'>('idle');
@@ -93,17 +94,25 @@ export default function Home() {
     }
   }
 
+  function changeStage(next: 'door' | 'welcome' | 'guest' | 'rsvp') {
+    if (transitioning || stage === next) return;
+    setTransitioning(true);
+    setDoorOpened(false);
+    setTimeout(() => { setStage(next); setTransitioning(false); }, 1200);
+  }
+
   function continueToGuest() {
     if (!name.trim()) return;
     const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
     const profile = guestProfiles[normalized];
     setGuest({ name: formatName(name), role: profile?.role, maxGuests: profile?.maxGuests ?? 1 });
-    setStage('rsvp');
+    changeStage('rsvp');
   }
 
   return (
     <main className="wedding-app">
       <div className="ambient-noise" />
+      <div className={`transition-doors ${transitioning ? 'closing' : ''}`} aria-hidden="true"><div className="transition-door transition-left"/><div className="transition-door transition-right"/></div>
 
       {stage === 'door' && (
         <section className="door-stage">
@@ -172,7 +181,7 @@ export default function Home() {
             <h1>Jhau <em>&amp;</em> Sheila</h1>
             <p className="date-large">27 · 12 · 2026</p>
             <p>Welcome to the beginning of our forever.</p>
-            <button className="gold-button" onClick={() => setStage('guest')}>Enter our invitation <ArrowRight size={17} /></button>
+            <button className="gold-button" onClick={() => changeStage('guest')}>Enter our invitation <ArrowRight size={17} /></button>
           </div>
           <div className="petals" aria-hidden="true">✦　·　✧　·　✦</div>
         </section>
@@ -220,7 +229,7 @@ export default function Home() {
               <div className="response-box">
                 <p>{rsvp === 'attending' ? 'We’re so happy you’ll be there. 🤍' : 'We’ll miss celebrating with you in person.'}</p>
                 <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Leave Jhau & Sheila a little message (optional)" />
-                <button className="gold-button" onClick={() => setStage('welcome')}>{rsvp === 'attending' ? 'Confirm my RSVP' : 'Send my response'} <Check size={17} /></button>
+                <button className="gold-button" onClick={() => changeStage('welcome')}>{rsvp === 'attending' ? 'Confirm my RSVP' : 'Send my response'} <Check size={17} /></button>
               </div>
             )}
           </div>
