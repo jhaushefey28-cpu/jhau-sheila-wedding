@@ -56,7 +56,6 @@ export default function Home() {
       ctx.fillStyle = '#c8aa72';
       ctx.font = '600 11px DM Sans, sans-serif';
       ctx.textAlign = 'center';
-      ctx.letterSpacing = '2px';
       ctx.fillText('KASKASIN DITO', rect.width / 2, rect.height / 2 - 4);
       ctx.globalAlpha = 1;
     };
