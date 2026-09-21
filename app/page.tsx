@@ -131,10 +131,12 @@ export default function Home() {
 
             <div className="couple-reveal">
               <div className="couple-photo">
-                <div className="photo-placeholder">
-                  <span className="photo-monogram">J <i>&amp;</i> S</span>
-                  <small>YOUR COUPLE PHOTO</small>
-                </div>
+                {sitePhoto ? <img className="couple-image" src={sitePhoto} alt="Jhau & Sheila" /> : (
+                  <div className="photo-placeholder">
+                    <span className="photo-monogram">J <i>&amp;</i> S</span>
+                    <small>YOUR COUPLE PHOTO</small>
+                  </div>
+                )}
               </div>
               <div className="reveal-caption">
                 <span>Jhau &amp; Sheila</span>
@@ -178,10 +180,12 @@ export default function Home() {
       {stage === 'welcome' && (
         <section className="welcome-stage">
           <div className="welcome-photo">
-            <div className="photo-placeholder large">
-              <span className="photo-monogram">J <i>&amp;</i> S</span>
-              <small>YOUR COUPLE PHOTO</small>
-            </div>
+            {sitePhoto ? <img className="couple-image large-couple-image" src={sitePhoto} alt="Jhau & Sheila" /> : (
+              <div className="photo-placeholder large">
+                <span className="photo-monogram">J <i>&amp;</i> S</span>
+                <small>YOUR COUPLE PHOTO</small>
+              </div>
+            )}
           </div>
           <div className="welcome-copy">
             <p className="eyebrow">The doors are open</p>
