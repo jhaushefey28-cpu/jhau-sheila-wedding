@@ -101,7 +101,11 @@ export default function Home() {
     if (transitioning || stage === next) return;
     setTransitioning(true);
     setDoorOpened(false);
-    setTimeout(() => { setStage(next); setTransitioning(false); }, 1200);
+    // Close the doors first, switch scenes while fully closed, then reopen them.
+    setTimeout(() => {
+      setStage(next);
+      setTimeout(() => setTransitioning(false), 520);
+    }, 1200);
   }
 
   function continueToGuest() {
@@ -115,7 +119,7 @@ export default function Home() {
   return (
     <main className="wedding-app">
       <div className="ambient-noise" />
-      <div className={`transition-doors ${transitioning ? 'closing' : ''}`} aria-hidden="true"><div className="transition-door transition-left"/><div className="transition-door transition-right"/></div>
+      <div className={`transition-doors ${transitioning ? 'closing' : 'opening'}`} aria-hidden="true"><div className="transition-door transition-left"><span className="transition-panel"/><span className="transition-knob"/></div><div className="transition-door transition-right"><span className="transition-panel"/><span className="transition-knob"/></div></div>
 
       {stage === 'door' && (
         <section className="door-stage">
