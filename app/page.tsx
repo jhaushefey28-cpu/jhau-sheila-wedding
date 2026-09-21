@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowRight, Check, Heart, MapPin, Music2, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, Heart, Sparkles } from 'lucide-react';
 
 const guestProfiles: Record<string, { role?: string; maxGuests: number }> = {
   'juan dela cruz': { role: 'Ninong', maxGuests: 1 },
@@ -13,170 +13,206 @@ function formatName(value: string) {
 }
 
 export default function Home() {
+  const [stage, setStage] = useState<'door' | 'welcome' | 'guest' | 'rsvp'>('door');
+  const [scratched, setScratched] = useState(0);
   const [name, setName] = useState('');
   const [guest, setGuest] = useState<{ name: string; role?: string; maxGuests: number } | null>(null);
   const [rsvp, setRsvp] = useState<'idle' | 'attending' | 'declined'>('idle');
-  const [bringingGuest, setBringingGuest] = useState(false);
-  const [companion, setCompanion] = useState('');
   const [message, setMessage] = useState('');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef(false);
+  const checkRef = useRef(false);
 
-  const normalized = useMemo(() => name.toLowerCase().trim().replace(/\s+/g, ' '), [name]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || stage !== 'door') return;
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(dpr, dpr);
+      ctx.fillStyle = '#eadfca';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      ctx.globalAlpha = .94;
+      ctx.fillStyle = '#c8aa72';
+      ctx.font = '600 11px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.letterSpacing = '2px';
+      ctx.fillText('KASKASIN DITO', rect.width / 2, rect.height / 2 - 4);
+      ctx.globalAlpha = 1;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [stage]);
 
-  function continueToInvitation() {
+  function scratch(e: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas || !drawingRef.current || stage !== 'door') return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x, y, 25, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (!checkRef.current) {
+      checkRef.current = true;
+      setTimeout(() => {
+        checkRef.current = false;
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let transparent = 0;
+        const step = 16;
+        for (let i = 3; i < data.length; i += 4 * step) if (data[i] < 50) transparent++;
+        const total = Math.ceil(data.length / (4 * step));
+        const percent = Math.round((transparent / total) * 100);
+        setScratched(percent);
+        if (percent >= 34) {
+          setStage('welcome');
+          setTimeout(() => canvas.remove(), 200);
+        }
+      }, 80);
+    }
+  }
+
+  function continueToGuest() {
     if (!name.trim()) return;
+    const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
     const profile = guestProfiles[normalized];
     setGuest({ name: formatName(name), role: profile?.role, maxGuests: profile?.maxGuests ?? 1 });
-    // The personalized section is rendered after state updates; the guest effect above
-    // handles the scroll once the new section is actually in the DOM.
+    setStage('rsvp');
   }
-
-  function chooseAttendance(value: 'attending' | 'declined') {
-    setRsvp(value);
-    document.getElementById('details')?.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  const countdown = 'December 27, 2026';
-
-  useEffect(() => {
-    if (!guest) return;
-    requestAnimationFrame(() => {
-      document.getElementById('personal-question')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }, [guest]);
-
-  useEffect(() => {
-    const items = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
-
-    items.forEach((item) => observer.observe(item));
-    return () => observer.disconnect();
-  }, []);
 
   return (
-    <main>
-      <section className="hero" id="home">
-        <div className="grain" />
-        <div className="hero-copy" data-hero>
-          <p className="eyebrow hero-eyebrow">A little invitation to something beautiful</p>
-          <h1 className="hero-title">Jhau <span>&amp;</span> Sheila</h1>
-          <p className="date hero-date">27 · 12 · 2026</p>
-          <p className="hero-note hero-note-animated">We would love for you to be part of the day our forever begins.</p>
-          <a className="scroll-cue" href="#welcome" aria-label="Scroll to open invitation">Scroll to open <ArrowDown size={16} /></a>
-        </div>
-        <div className="hero-orbit orbit-one" aria-hidden="true" />
-        <div className="hero-orbit orbit-two" aria-hidden="true" />
-        <div className="hero-spark spark-one" aria-hidden="true">✦</div>
-        <div className="hero-spark spark-two" aria-hidden="true">✦</div>
-        <div className="hero-spark spark-three" aria-hidden="true">·</div>
-        <div className="hero-botanical botanical-left" aria-hidden="true">✦</div>
-        <div className="hero-botanical botanical-right" aria-hidden="true">✦</div>
-      </section>
+    <main className="wedding-app">
+      <div className="ambient-noise" />
 
-      <section className="opening section" id="welcome">
-        <div className="section-inner narrow center" data-reveal>
-          <p className="eyebrow">Dear friend,</p>
-          <h2>Some moments are meant to be shared.</h2>
-          <p className="lead">On December 27, 2026, we are gathering the people who have made our story special. We hope you can celebrate this new chapter with us.</p>
-          <div className="ornament"><span>J</span><Heart size={15} fill="currentColor" /><span>S</span></div>
-        </div>
-      </section>
+      {stage === 'door' && (
+        <section className="door-stage">
+          <div className="door-arch">
+            <div className="door-floral floral-left">✦<span>❀</span>✦</div>
+            <div className="door-floral floral-right">✦<span>❀</span>✦</div>
+            <div className="lantern lantern-left">◉</div>
+            <div className="lantern lantern-right">◉</div>
 
-      <section className="personal section" id="personal">
-        <div className="section-inner narrow" data-reveal>
-          <p className="eyebrow">Make it personal</p>
-          <h2>May we know who we’re welcoming?</h2>
-          <p className="muted">Enter your name and we’ll make this invitation a little more personal.</p>
-          <div className="name-card">
-            <label htmlFor="guest-name">Your name</label>
-            <div className="name-row">
-              <input id="guest-name" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && continueToInvitation()} placeholder="Juan Dela Cruz" />
-              <button onClick={continueToInvitation} aria-label="Continue"><ArrowRight /></button>
+            <div className="couple-reveal">
+              <div className="couple-photo">
+                <div className="photo-placeholder">
+                  <span className="photo-monogram">J <i>&amp;</i> S</span>
+                  <small>YOUR COUPLE PHOTO</small>
+                </div>
+              </div>
+              <div className="reveal-caption">
+                <span>Jhau &amp; Sheila</span>
+                <small>27 · 12 · 2026</small>
+              </div>
+            </div>
+
+            <div className="grand-door left-door">
+              <div className="door-panel" />
+              <span className="door-handle">◈</span>
+            </div>
+            <div className="grand-door right-door">
+              <div className="door-panel" />
+              <span className="door-handle">◈</span>
+            </div>
+
+            <canvas
+              ref={canvasRef}
+              className="scratch-layer"
+              onPointerDown={(e) => { drawingRef.current = true; e.currentTarget.setPointerCapture(e.pointerId); scratch(e); }}
+              onPointerMove={scratch}
+              onPointerUp={() => { drawingRef.current = false; }}
+              onPointerCancel={() => { drawingRef.current = false; }}
+            />
+
+            <div className="scratch-guide">
+              <span className="scratch-hand">✧</span>
+              <strong>Scratch the center</strong>
+              <small>Reveal the couple to open the door</small>
+              <div className="scratch-progress"><span style={{ width: `${Math.min(scratched, 100)}%` }} /></div>
             </div>
           </div>
-        </div>
-      </section>
+          <div className="door-footer">
+            <p>A little invitation to something beautiful</p>
+            <span>December 27, 2026</span>
+          </div>
+        </section>
+      )}
 
-      {guest && (
-        <section className="question section" id="personal-question">
-          <div className="section-inner narrow center dynamic-reveal">
-            <p className="eyebrow">A little something from us</p>
-            <p className="hello">Dear {guest.name},</p>
+      {stage === 'welcome' && (
+        <section className="welcome-stage">
+          <div className="welcome-photo">
+            <div className="photo-placeholder large">
+              <span className="photo-monogram">J <i>&amp;</i> S</span>
+              <small>YOUR COUPLE PHOTO</small>
+            </div>
+          </div>
+          <div className="welcome-copy">
+            <p className="eyebrow">The doors are open</p>
+            <h1>Jhau <em>&amp;</em> Sheila</h1>
+            <p className="date-large">27 · 12 · 2026</p>
+            <p>Welcome to the beginning of our forever.</p>
+            <button className="gold-button" onClick={() => setStage('guest')}>Enter our invitation <ArrowRight size={17} /></button>
+          </div>
+          <div className="petals" aria-hidden="true">✦　·　✧　·　✦</div>
+        </section>
+      )}
+
+      {stage === 'guest' && (
+        <section className="guest-stage">
+          <div className="guest-decoration"><Heart size={18} fill="currentColor" /></div>
+          <p className="eyebrow">A personal invitation</p>
+          <h1>May we know<br />who we’re welcoming?</h1>
+          <p className="lead">Enter your name and we’ll make this invitation a little more personal.</p>
+          <div className="guest-form">
+            <label htmlFor="guest-name">Your name</label>
+            <div className="guest-input">
+              <input id="guest-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && continueToGuest()} placeholder="Juan Dela Cruz" />
+              <button onClick={continueToGuest} aria-label="Continue"><ArrowRight /></button>
+            </div>
+          </div>
+          <p className="hint">Try: Juan Dela Cruz or Maria Santos</p>
+        </section>
+      )}
+
+      {stage === 'rsvp' && guest && (
+        <section className="rsvp-stage">
+          <div className="rsvp-glow" />
+          <div className="rsvp-card">
+            <p className="eyebrow">Dear {guest.name}</p>
             {guest.role ? (
               <>
                 <p className="question-intro">Jhau &amp; Sheila have one little question for you…</p>
-                <h2>Will you be our <em>{guest.role}?</em></h2>
+                <h1>Will you be our <em>{guest.role}?</em></h1>
               </>
             ) : (
               <>
                 <p className="question-intro">We’d love to celebrate this beautiful day with you.</p>
-                <h2>Can we save you a seat?</h2>
+                <h1>Can we save you a seat?</h1>
               </>
             )}
-            <div className="choice-grid">
-              <button className="choice primary" onClick={() => chooseAttendance('attending')}><span>{guest.role ? 'I’d be honored' : 'Yes, save my seat'}</span><Heart size={17} /></button>
-              <button className="choice soft" onClick={() => chooseAttendance('declined')}><span>I’ll be cheering from afar</span><Sparkles size={17} /></button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="details section" id="details">
-        <div className="section-inner" data-reveal>
-          <div className="section-heading"><p className="eyebrow">The day</p><h2>Let’s make a memory.</h2></div>
-          <div className="details-grid">
-            <article><span className="icon"><Sparkles /></span><p className="label">Date</p><h3>{countdown}</h3><p>Sunday · Save the date</p></article>
-            <article><span className="icon"><MapPin /></span><p className="label">Venue</p><h3>Details coming soon</h3><p>The ceremony and reception details will be added here.</p></article>
-            <article><span className="icon"><Music2 /></span><p className="label">Dress code</p><h3>Your best dressed self</h3><p>Final palette and attire notes will be announced.</p></article>
-          </div>
-        </div>
-      </section>
-
-      {guest && rsvp !== 'idle' && (
-        <section className="rsvp section">
-          <div className="section-inner narrow center" data-reveal>
-            {rsvp === 'attending' ? (
-              <>
-                <p className="eyebrow">Almost there</p>
-                <h2>We’re so happy you’ll be there. 🤍</h2>
-                {guest.maxGuests > 1 ? (
-                  <div className="attendance-box">
-                    <p className="label">Will you be bringing someone?</p>
-                    <div className="mini-choice"><button className={bringingGuest ? 'selected' : ''} onClick={() => setBringingGuest(true)}>Yes, I’ll bring a guest</button><button className={!bringingGuest ? 'selected' : ''} onClick={() => { setBringingGuest(false); setCompanion(''); }}>Just me</button></div>
-                    {bringingGuest && <input value={companion} onChange={(e) => setCompanion(e.target.value)} placeholder="Guest’s name" />}
-                  </div>
-                ) : <p className="muted">This invitation is reserved for {guest.name}.</p>}
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Leave Jhau & Sheila a little message (optional)" />
-                <button className="confirm" onClick={() => document.getElementById('confirmed')?.scrollIntoView({ behavior: 'smooth' })}>Confirm my RSVP <Check size={17} /></button>
-              </>
+            {rsvp === 'idle' ? (
+              <div className="rsvp-actions">
+                <button className="rsvp-yes" onClick={() => setRsvp('attending')}>I’d be honored <Heart size={17} /></button>
+                <button className="rsvp-no" onClick={() => setRsvp('declined')}>I’ll be cheering from afar <Sparkles size={17} /></button>
+              </div>
             ) : (
-              <>
-                <p className="eyebrow">Thank you for letting us know</p>
-                <h2>We’ll miss celebrating with you in person.</h2>
-                <p className="lead">Your love and support already mean so much to us. 🤍</p>
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Leave us a little message (optional)" />
-                <button className="confirm" onClick={() => document.getElementById('confirmed')?.scrollIntoView({ behavior: 'smooth' })}>Send my response <ArrowRight size={17} /></button>
-              </>
+              <div className="response-box">
+                <p>{rsvp === 'attending' ? 'We’re so happy you’ll be there. 🤍' : 'We’ll miss celebrating with you in person.'}</p>
+                <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Leave Jhau & Sheila a little message (optional)" />
+                <button className="gold-button" onClick={() => setStage('welcome')}>{rsvp === 'attending' ? 'Confirm my RSVP' : 'Send my response'} <Check size={17} /></button>
+              </div>
             )}
           </div>
         </section>
       )}
-
-      <section className="confirmed section" id="confirmed">
-        <div className="section-inner narrow center" data-reveal>
-          <div className="seal">J <span>&amp;</span> S</div>
-          <p className="eyebrow">With love</p>
-          <h2>See you on our wedding day.</h2>
-          <p className="date-large">27 · 12 · 2026</p>
-          <p className="signature">Jhau &amp; Sheila</p>
-        </div>
-      </section>
     </main>
   );
 }
