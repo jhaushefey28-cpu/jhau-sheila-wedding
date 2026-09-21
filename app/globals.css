@@ -34,3 +34,6 @@
 @keyframes sealPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #a88a5a00}50%{transform:scale(1.03);box-shadow:0 0 0 10px #a88a5a0d}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}[data-reveal]{opacity:1!important;transform:none!important}}
 @media(max-width:700px){.section{padding:90px 20px}.hero h1{font-size:78px}.choice-grid,.details-grid{grid-template-columns:1fr}.choice{min-height:58px}.details-grid article{min-height:auto;padding:30px}.hero-botanical{font-size:120px}.lead{font-size:22px}.question h2{font-size:51px}}
+
+.dynamic-reveal{opacity:1;transform:none;animation:dynamicRise .9s cubic-bezier(.22,1,.36,1) both}.dynamic-reveal .hello{animation:fadeUp .8s .12s both}.dynamic-reveal .question-intro{animation:fadeUp .8s .2s both}.dynamic-reveal h2{animation:fadeUp .9s .28s both}.dynamic-reveal .choice-grid{animation:fadeUp .9s .4s both}.hero-orbit{box-shadow:0 0 35px #b69a6a10}.hero::before{box-shadow:0 0 80px #b69a6a0b}.hero-spark{filter:drop-shadow(0 0 5px #b69a6a44)}
+@keyframes dynamicRise{from{opacity:0;transform:translateY(38px) scale(.985)}to{opacity:1;transform:none}}
