@@ -56,6 +56,7 @@ export default function Home() {
       ctx.fillStyle = '#c8aa72';
       ctx.font = '600 11px DM Sans, sans-serif';
       ctx.textAlign = 'center';
+      ctx.letterSpacing = '2px';
       ctx.fillText('KASKASIN DITO', rect.width / 2, rect.height / 2 - 4);
       ctx.globalAlpha = 1;
     };
@@ -130,12 +131,10 @@ export default function Home() {
 
             <div className="couple-reveal">
               <div className="couple-photo">
-                {sitePhoto ? <img className="couple-image" src={sitePhoto} alt="Jhau & Sheila" /> : (
-                  <div className="photo-placeholder">
-                    <span className="photo-monogram">J <i>&amp;</i> S</span>
-                    <small>YOUR COUPLE PHOTO</small>
-                  </div>
-                )}
+                <div className="photo-placeholder">
+                  <span className="photo-monogram">J <i>&amp;</i> S</span>
+                  <small>YOUR COUPLE PHOTO</small>
+                </div>
               </div>
               <div className="reveal-caption">
                 <span>Jhau &amp; Sheila</span>
@@ -179,12 +178,10 @@ export default function Home() {
       {stage === 'welcome' && (
         <section className="welcome-stage">
           <div className="welcome-photo">
-            {sitePhoto ? <img className="couple-image large-couple-image" src={sitePhoto} alt="Jhau & Sheila" /> : (
-              <div className="photo-placeholder large">
-                <span className="photo-monogram">J <i>&amp;</i> S</span>
-                <small>YOUR COUPLE PHOTO</small>
-              </div>
-            )}
+            <div className="photo-placeholder large">
+              <span className="photo-monogram">J <i>&amp;</i> S</span>
+              <small>YOUR COUPLE PHOTO</small>
+            </div>
           </div>
           <div className="welcome-copy">
             <p className="eyebrow">The doors are open</p>
