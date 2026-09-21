@@ -27,6 +27,7 @@ export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const checkRef = useRef(false);
+  const revealStartedRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -89,9 +90,12 @@ export default function Home() {
         const total = Math.ceil(data.length / (4 * step));
         const percent = Math.round((transparent / total) * 100);
         setScratched(percent);
-        if (percent >= 34) {
+        if (percent >= 34 && !revealStartedRef.current) {
+          revealStartedRef.current = true;
           setDoorOpened(true);
-          setTimeout(() => setStage('welcome'), 2200);
+          // Let the guest see the doors open first. Then close them completely,
+          // change the scene behind the closed doors, and open again.
+          setTimeout(() => changeStage('welcome'), 2400);
         }
       }, 80);
     }
