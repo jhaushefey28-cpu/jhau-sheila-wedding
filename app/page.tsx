@@ -13,7 +13,7 @@ function formatName(value: string) {
 }
 
 export default function Home() {
-  const [stage, setStage] = useState<'door' | 'welcome' | 'guest' | 'rsvp'>('door');
+  const [stage, setStage] = useState<'door' | 'welcome' | 'details' | 'guest' | 'rsvp'>('door');
   const [scratched, setScratched] = useState(0);
   const [doorOpened, setDoorOpened] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -23,6 +23,7 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [sitePhoto, setSitePhoto] = useState<string | null>(null);
   const [siteTheme, setSiteTheme] = useState({ bg: '#f3ecdf', accent: '#b99559', text: '#2d2722', door: '#e9dcc5' });
+  const [details, setDetails] = useState({ ceremonyName:'Wedding Ceremony', ceremonyLocation:'Ceremony Location', ceremonyImage:'', venueName:'Wedding Reception', venueLocation:'Reception Venue Location', venueImage:'' });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const checkRef = useRef(false);
@@ -33,6 +34,8 @@ export default function Home() {
       const savedTheme = localStorage.getItem('jhau-wedding-theme');
       if (savedPhoto) setSitePhoto(savedPhoto);
       if (savedTheme) setSiteTheme(JSON.parse(savedTheme));
+      const savedDetails = localStorage.getItem('jhau-wedding-details');
+      if (savedDetails) setDetails(JSON.parse(savedDetails));
     } catch {}
   }, []);
 
@@ -94,7 +97,7 @@ export default function Home() {
     }
   }
 
-  function changeStage(next: 'door' | 'welcome' | 'guest' | 'rsvp') {
+  function changeStage(next: 'door' | 'welcome' | 'details' | 'guest' | 'rsvp') {
     if (transitioning || stage === next) return;
     setTransitioning(true);
     setDoorOpened(false);
@@ -181,9 +184,26 @@ export default function Home() {
             <h1>Jhau <em>&amp;</em> Sheila</h1>
             <p className="date-large">27 · 12 · 2026</p>
             <p>Welcome to the beginning of our forever.</p>
-            <button className="gold-button" onClick={() => changeStage('guest')}>Enter our invitation <ArrowRight size={17} /></button>
+            <button className="gold-button" onClick={() => changeStage('details')}>Enter our invitation <ArrowRight size={17} /></button>
           </div>
           <div className="petals" aria-hidden="true">✦　·　✧　·　✦</div>
+        </section>
+      )}
+
+      {stage === 'details' && (
+        <section className="details-stage">
+          <div className="details-heading"><p className="eyebrow">The celebration</p><h1>Join us<br/><em>on our day.</em></h1><p>Two places, one beautiful beginning.</p></div>
+          <div className="details-cards">
+            <article className="detail-card">
+              <div className="detail-image">{details.ceremonyImage ? <img src={details.ceremonyImage} alt={details.ceremonyName}/> : <div className="detail-placeholder">✦<span>CEREMONY</span></div>}</div>
+              <div className="detail-copy"><small>01 · WEDDING CEREMONY</small><h2>{details.ceremonyName}</h2><p>{details.ceremonyLocation}</p><button className="gold-button" onClick={()=>window.open('https://maps.google.com/?q='+encodeURIComponent(details.ceremonyLocation),'_blank')}>View location <ArrowRight size={16}/></button></div>
+            </article>
+            <article className="detail-card reverse">
+              <div className="detail-image">{details.venueImage ? <img src={details.venueImage} alt={details.venueName}/> : <div className="detail-placeholder">✦<span>RECEPTION</span></div>}</div>
+              <div className="detail-copy"><small>02 · RECEPTION VENUE</small><h2>{details.venueName}</h2><p>{details.venueLocation}</p><button className="gold-button" onClick={()=>window.open('https://maps.google.com/?q='+encodeURIComponent(details.venueLocation),'_blank')}>View location <ArrowRight size={16}/></button></div>
+            </article>
+          </div>
+          <button className="details-continue" onClick={()=>changeStage('guest')}>Continue to invitation <ArrowRight size={17}/></button>
         </section>
       )}
 
