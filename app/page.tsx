@@ -26,7 +26,8 @@ export default function Home() {
     if (!name.trim()) return;
     const profile = guestProfiles[normalized];
     setGuest({ name: formatName(name), role: profile?.role, maxGuests: profile?.maxGuests ?? 1 });
-    document.getElementById('personal')?.scrollIntoView({ behavior: 'smooth' });
+    // The personalized section is rendered after state updates; the guest effect above
+    // handles the scroll once the new section is actually in the DOM.
   }
 
   function chooseAttendance(value: 'attending' | 'declined') {
@@ -35,6 +36,13 @@ export default function Home() {
   }
 
   const countdown = 'December 27, 2026';
+
+  useEffect(() => {
+    if (!guest) return;
+    requestAnimationFrame(() => {
+      document.getElementById('personal-question')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [guest]);
 
   useEffect(() => {
     const items = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
@@ -96,8 +104,8 @@ export default function Home() {
       </section>
 
       {guest && (
-        <section className="question section">
-          <div className="section-inner narrow center reveal" data-reveal>
+        <section className="question section" id="personal-question">
+          <div className="section-inner narrow center dynamic-reveal">
             <p className="eyebrow">A little something from us</p>
             <p className="hello">Dear {guest.name},</p>
             {guest.role ? (
