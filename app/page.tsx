@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, Heart, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, Heart, Settings2, Sparkles } from 'lucide-react';
 
 const guestProfiles: Record<string, { role?: string; maxGuests: number }> = {
   'juan dela cruz': { role: 'Ninong', maxGuests: 1 },
@@ -20,9 +20,20 @@ export default function Home() {
   const [guest, setGuest] = useState<{ name: string; role?: string; maxGuests: number } | null>(null);
   const [rsvp, setRsvp] = useState<'idle' | 'attending' | 'declined'>('idle');
   const [message, setMessage] = useState('');
+  const [sitePhoto, setSitePhoto] = useState<string | null>(null);
+  const [siteTheme, setSiteTheme] = useState({ bg: '#f3ecdf', accent: '#b99559', text: '#2d2722', door: '#e9dcc5' });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const checkRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const savedPhoto = localStorage.getItem('jhau-wedding-photo');
+      const savedTheme = localStorage.getItem('jhau-wedding-theme');
+      if (savedPhoto) setSitePhoto(savedPhoto);
+      if (savedTheme) setSiteTheme(JSON.parse(savedTheme));
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
