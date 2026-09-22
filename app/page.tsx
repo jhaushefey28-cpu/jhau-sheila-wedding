@@ -57,13 +57,13 @@ export default function Home() {
         .back{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#fffdf9,#ead7ba)}
         .back img{width:min(43%,350px);aspect-ratio:3/4;object-fit:cover;border-radius:50% 50% 14px 14px;border:6px solid #fffaf1;box-shadow:0 20px 50px #52361f30}
         .door{position:absolute;top:0;width:50%;height:100%;z-index:5;background:linear-gradient(95deg,#d5ba88,#f8f0e4 45%,#e5cca2);transition:transform 1.55s cubic-bezier(.76,0,.18,1);box-shadow:inset 0 0 0 1px #ad8248}
-        .left{left:0;transform-origin:left}.right{right:0;transform-origin:right}
+        .door-left{left:0;transform-origin:left}.door-right{right:0;transform-origin:right}
         .door:before{content:"";position:absolute;inset:5% 8% 12%;border:1px solid #b58d52;border-radius:48% 48% 8px 8px/29% 29% 8px 8px;box-shadow:inset 0 0 0 7px #fff9ed55}
         .door:after{content:"❧   ❀   ❧";position:absolute;top:24%;left:50%;transform:translateX(-50%);font:26px Georgia,serif;letter-spacing:9px;color:#b08a52;white-space:nowrap}
         .panel{position:absolute;inset:17% 17% 25%;border:1px solid #c09a5d;border-radius:40% 40% 8px 8px/24% 24% 8px 8px;box-shadow:inset 0 0 0 5px #fff8e933}
         .handle{position:absolute;top:51%;width:20px;height:66px;border:2px solid #9e7540;border-radius:14px;background:linear-gradient(#d8b36e,#896232);z-index:8}
-        .left .handle{right:7px}.right .handle{left:7px}
-        .open .left{transform:translateX(-101%)}.open .right{transform:translateX(101%)}
+        .door-left .handle{right:7px}.door-right .handle{left:7px}
+        .open .door-left{transform:translateX(-101%)}.open .door-right{transform:translateX(101%)}
         .flowers{position:absolute;z-index:9;top:2%;bottom:4%;width:25%;pointer-events:none;color:#6b7658}
         .flowers.left{left:0}.flowers.right{right:0;transform:scaleX(-1)}
         .flowers:before{content:"✿  ❀  ❁  ✦";position:absolute;top:2%;left:0;font-size:clamp(28px,4vw,58px);transform:rotate(-15deg);text-shadow:0 8px 20px #49351e22}
@@ -99,8 +99,8 @@ export default function Home() {
             <div className="arch">
               <div className="archin">
                 <div className="back"><img src="/couple-photo.png" alt="Jhau and Sheila"/></div>
-                <div className="door left"><div className="panel"/><span className="handle"/></div>
-                <div className="door right"><div className="panel"/><span className="handle"/></div>
+                <div className="door door-left"><div className="panel"/><span className="handle"/></div>
+                <div className="door door-right"><div className="panel"/><span className="handle"/></div>
               </div>
             </div>
             <div className="flowers left"/><div className="flowers right"/>
