@@ -1,261 +1,136 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, Heart, Settings2, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import type { PointerEvent } from 'react';
 
-const guestProfiles: Record<string, { role?: string; maxGuests: number }> = {
-  'juan dela cruz': { role: 'Ninong', maxGuests: 1 },
-  'maria santos': { role: 'Ninang', maxGuests: 1 },
-};
-
-function formatName(value: string) {
-  return value.trim().replace(/\s+/g, ' ').replace(/(^|\s)\S/g, (m) => m.toUpperCase());
-}
+type Stage = 'door' | 'welcome' | 'details' | 'guest';
 
 export default function Home() {
-  const [stage, setStage] = useState<'door' | 'welcome' | 'details' | 'guest' | 'rsvp'>('door');
+  const [stage, setStage] = useState<Stage>('door');
   const [scratched, setScratched] = useState(0);
-  const [doorOpened, setDoorOpened] = useState(false);
-  const [transitioning, setTransitioning] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [name, setName] = useState('');
-  const [guest, setGuest] = useState<{ name: string; role?: string; maxGuests: number } | null>(null);
-  const [rsvp, setRsvp] = useState<'idle' | 'attending' | 'declined'>('idle');
-  const [message, setMessage] = useState('');
-  const [sitePhoto, setSitePhoto] = useState<string | null>(null);
-  const [siteTheme, setSiteTheme] = useState({ bg: '#f3ecdf', accent: '#b99559', text: '#2d2722', door: '#e9dcc5' });
-  const [details, setDetails] = useState({ ceremonyName:'Wedding Ceremony', ceremonyLocation:'Ceremony Location', ceremonyImage:'', venueName:'Wedding Reception', venueLocation:'Reception Venue Location', venueImage:'' });
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawingRef = useRef(false);
-  const checkRef = useRef(false);
 
-  useEffect(() => {
-    try {
-      const savedPhoto = localStorage.getItem('jhau-wedding-photo');
-      const savedTheme = localStorage.getItem('jhau-wedding-theme');
-      if (savedPhoto) setSitePhoto(savedPhoto);
-      if (savedTheme) setSiteTheme(JSON.parse(savedTheme));
-      const savedDetails = localStorage.getItem('jhau-wedding-details');
-      if (savedDetails) setDetails(JSON.parse(savedDetails));
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || stage !== 'door') return;
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.scale(dpr, dpr);
-      ctx.fillStyle = '#eadfca';
-      ctx.fillRect(0, 0, rect.width, rect.height);
-      ctx.globalAlpha = .94;
-      ctx.fillStyle = '#c8aa72';
-      ctx.font = '600 11px DM Sans, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.letterSpacing = '2px';
-      ctx.fillText('KASKASIN DITO', rect.width / 2, rect.height / 2 - 4);
-      ctx.globalAlpha = 1;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, [stage]);
-
-  function scratch(e: React.PointerEvent<HTMLCanvasElement>) {
-    const canvas = canvasRef.current;
-    if (!canvas || !drawingRef.current || stage !== 'door') return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, 25, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (!checkRef.current) {
-      checkRef.current = true;
-      setTimeout(() => {
-        checkRef.current = false;
-        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        let transparent = 0;
-        const step = 16;
-        for (let i = 3; i < data.length; i += 4 * step) if (data[i] < 50) transparent++;
-        const total = Math.ceil(data.length / (4 * step));
-        const percent = Math.round((transparent / total) * 100);
-        setScratched(percent);
-        if (percent >= 34) {
-          setDoorOpened(true);
-          setTimeout(() => setStage('welcome'), 2200);
-        }
-      }, 80);
-    }
-  }
-
-  function changeStage(next: 'door' | 'welcome' | 'details' | 'guest' | 'rsvp') {
-    if (transitioning || stage === next) return;
-    setTransitioning(true);
-    setDoorOpened(false);
-    // Close the doors first, switch scenes while fully closed, then reopen them.
-    setTimeout(() => {
+  const transitionTo = (next: Stage) => {
+    if (closing || stage === next) return;
+    setClosing(true);
+    setOpen(false);
+    window.setTimeout(() => {
       setStage(next);
-      setTimeout(() => setTransitioning(false), 520);
-    }, 1200);
-  }
+      window.setTimeout(() => setClosing(false), 650);
+    }, 850);
+  };
 
-  function continueToGuest() {
-    if (!name.trim()) return;
-    const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
-    const profile = guestProfiles[normalized];
-    setGuest({ name: formatName(name), role: profile?.role, maxGuests: profile?.maxGuests ?? 1 });
-    changeStage('rsvp');
-  }
+  const scratch = (event: PointerEvent<HTMLDivElement>) => {
+    if (open || closing) return;
+    if (event.buttons !== 1) return;
+    const next = Math.min(100, scratched + 5);
+    setScratched(next);
+    if (next >= 100) {
+      setOpen(true);
+    }
+  };
 
   return (
-    <main className="wedding-app">
-      <div className="ambient-noise" />
-      <div className={`transition-doors ${transitioning ? 'closing' : 'opening'}`} aria-hidden="true"><div className="transition-door transition-left"><span className="transition-panel"/><span className="transition-knob"/></div><div className="transition-door transition-right"><span className="transition-panel"/><span className="transition-knob"/></div></div>
+    <main className="stable-wedding">
+      <style>{`
+        .stable-wedding{min-height:100dvh;background:radial-gradient(circle at 50% 35%,#fffdf8 0,#f2e7d5 58%,#dfcfb4 100%);color:#302923;font-family:Arial,sans-serif;overflow:hidden;position:relative}
+        .stable-noise{position:absolute;inset:0;pointer-events:none;opacity:.08;background-image:radial-gradient(#765f40 .7px,transparent .8px);background-size:7px 7px}
+        .stable-stage{min-height:100dvh;display:grid;place-items:center;padding:24px;position:relative}
+        .stable-arch{width:min(88vw,680px);height:min(86vh,780px);position:relative;border:1px solid #c8aa72;border-radius:340px 340px 24px 24px;background:#eadcc5;box-shadow:0 30px 80px #5a432522,inset 0 0 0 8px #fffaf055;overflow:hidden}
+        .stable-arch:before{content:"";position:absolute;inset:18px;border:1px solid #c8aa72;border-radius:320px 320px 18px 18px;pointer-events:none;z-index:10}
+        .stable-photo{position:absolute;inset:14% 14% 10%;display:grid;place-items:center;background:radial-gradient(circle,#fffaf0,#d8c3a0);text-align:center}
+        .stable-monogram{font:600 clamp(58px,10vw,100px)/1 Georgia,serif;color:#9a7845;letter-spacing:-6px}
+        .stable-monogram em{font-size:.6em;color:#b7955d;font-style:normal}
+        .stable-photo small{display:block;margin-top:16px;font-size:9px;letter-spacing:4px;color:#876c43}
+        .stable-door{position:absolute;top:0;width:50%;height:100%;z-index:5;background:linear-gradient(90deg,#d7bf94,#f7efe2 48%,#dec59a);transition:transform 1.45s cubic-bezier(.76,0,.18,1)}
+        .stable-left{left:0;transform-origin:left}.stable-right{right:0;transform-origin:right}
+        .stable-door:after{content:"";position:absolute;inset:11% 10%;border:1px solid #b89458;border-radius:260px 260px 10px 10px;box-shadow:inset 0 0 0 8px #fff8e922}
+        .stable-left .stable-handle{right:9px}.stable-right .stable-handle{left:9px}
+        .stable-handle{position:absolute;top:50%;color:#a17d48;font-size:22px}
+        .stable-open .stable-left{transform:translateX(-101%)}.stable-open .stable-right{transform:translateX(101%)}
+        .stable-scratch{position:absolute;z-index:7;inset:37% 27% 31%;display:grid;place-items:center;cursor:crosshair;border:1px solid #b89458;background:linear-gradient(135deg,#e8d7b7,#c8aa72);color:#fff;transition:opacity .5s}
+        .stable-scratch strong{font:600 12px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;text-align:center;text-shadow:0 1px 3px #59401e66}
+        .stable-scratch small{font-size:9px;letter-spacing:1px;opacity:.9}
+        .stable-progress{position:absolute;left:15%;right:15%;bottom:14%;height:3px;background:#ffffff66}.stable-progress span{display:block;height:100%;background:#fff;transition:width .15s}
+        .stable-copy{position:absolute;z-index:20;text-align:center;bottom:8%;left:10%;right:10%;font-family:Georgia,serif;color:#59452f}
+        .stable-copy b{display:block;font-size:28px;font-weight:500}.stable-copy small{letter-spacing:4px;font:10px Arial,sans-serif}
+        .stable-content{width:min(900px,94vw);text-align:center;background:#fffaf2e8;border:1px solid #d4c09c;padding:clamp(34px,7vw,72px);box-shadow:0 30px 80px #5a43251f}
+        .stable-content h1{font:500 clamp(52px,8vw,96px)/.9 Georgia,serif;margin:10px 0 20px}.stable-content h1 em{color:#b18c52;font-style:italic}
+        .stable-content p{color:#766756;line-height:1.7}.stable-eyebrow{font:10px Arial,sans-serif;letter-spacing:4px;text-transform:uppercase;color:#a17d48}
+        .stable-button{border:1px solid #b18c52;background:#b18c52;color:#fff;padding:14px 22px;border-radius:999px;margin-top:22px;cursor:pointer}
+        .stable-fields{max-width:520px;margin:28px auto 0;text-align:left}.stable-fields label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8a7359}.stable-fields input{width:100%;margin-top:8px;padding:15px;border:1px solid #d4c09c;background:#fff;border-radius:4px;outline:none}
+        .stable-transition{position:fixed;z-index:100;inset:0;pointer-events:none;display:flex}.stable-transition div{width:50%;height:100%;background:linear-gradient(90deg,#d7bf94,#f7efe2,#dec59a);transition:transform .85s cubic-bezier(.76,0,.18,1)}.stable-transition .l{transform:translateX(-101%)}.stable-transition .r{transform:translateX(101%)}.stable-transition.closed .l,.stable-transition.closed .r{transform:translateX(0)}
+        @media(max-width:600px){.stable-arch{width:94vw;height:78vh}.stable-scratch{inset:36% 22% 31%}.stable-copy b{font-size:24px}}
+      `}</style>
+
+      <div className="stable-noise" />
+
+      <div className={`stable-transition ${closing ? 'closed' : ''}`} aria-hidden="true">
+        <div className="l" /><div className="r" />
+      </div>
 
       {stage === 'door' && (
-        <section className="door-stage">
-          <div className="door-arch">
-            <div className="door-floral floral-left">✦<span>❀</span>✦</div>
-            <div className="door-floral floral-right">✦<span>❀</span>✦</div>
-            <div className="lantern lantern-left">◉</div>
-            <div className="lantern lantern-right">◉</div>
-
-            <div className="couple-reveal">
-              <div className="couple-photo">
-                <div className="photo-placeholder">
-                  <span className="photo-monogram">J <i>&amp;</i> S</span>
-                  <small>YOUR COUPLE PHOTO</small>
+        <section className={`stable-stage ${open ? 'stable-open' : ''}`}>
+          <div className="stable-arch">
+            <div className="stable-photo">
+              <div>
+                <div className="stable-monogram">J <em>&amp;</em> S</div>
+                <small>JHAU &amp; SHEILA · OUR SPECIAL DAY</small>
+              </div>
+            </div>
+            <div className="stable-door stable-left"><span className="stable-handle">◈</span></div>
+            <div className="stable-door stable-right"><span className="stable-handle">◈</span></div>
+            {!open && (
+              <div className="stable-scratch" onPointerMove={scratch} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setScratched(Math.min(100, scratched + 8)); }}>
+                <div>
+                  <strong>Scratch the center</strong><br />
+                  <small>Reveal Jhau &amp; Sheila to open the doors</small>
                 </div>
+                <div className="stable-progress"><span style={{width: `${scratched}%`}} /></div>
               </div>
-              <div className="reveal-caption">
-                <span>Jhau &amp; Sheila</span>
-                <small>27 · 12 · 2026</small>
-              </div>
-            </div>
-
-            <div className={`grand-door left-door ${doorOpened ? "door-open" : ""}`}>
-              <div className="door-panel" />
-              <span className="door-handle">◈</span>
-            </div>
-            <div className={`grand-door right-door ${doorOpened ? "door-open" : ""}`}>
-              <div className="door-panel" />
-              <span className="door-handle">◈</span>
-            </div>
-
-            <canvas
-              ref={canvasRef}
-              style={{ opacity: doorOpened ? 0 : 1 }}
-              className="scratch-layer"
-              onPointerDown={(e) => { drawingRef.current = true; e.currentTarget.setPointerCapture(e.pointerId); scratch(e); }}
-              onPointerMove={scratch}
-              onPointerUp={() => { drawingRef.current = false; }}
-              onPointerCancel={() => { drawingRef.current = false; }}
-            />
-
-            <div className="scratch-guide">
-              <span className="scratch-hand">✧</span>
-              <strong>Scratch the center</strong>
-              <small>Reveal the couple to open the door</small>
-              <div className="scratch-progress"><span style={{ width: `${Math.min(scratched, 100)}%` }} /></div>
-            </div>
-          </div>
-          <div className="door-footer">
-            <p>A little invitation to something beautiful</p>
-            <span>December 27, 2026</span>
+            )}
+            <div className="stable-copy"><b>Jhau &amp; Sheila</b><small>DECEMBER 27, 2026</small></div>
           </div>
         </section>
       )}
 
       {stage === 'welcome' && (
-        <section className="welcome-stage">
-          <div className="welcome-photo">
-            <div className="photo-placeholder large">
-              <span className="photo-monogram">J <i>&amp;</i> S</span>
-              <small>YOUR COUPLE PHOTO</small>
-            </div>
-          </div>
-          <div className="welcome-copy">
-            <p className="eyebrow">The doors are open</p>
+        <section className="stable-stage">
+          <div className="stable-content">
+            <div className="stable-eyebrow">The doors are open</div>
             <h1>Jhau <em>&amp;</em> Sheila</h1>
-            <p className="date-large">27 · 12 · 2026</p>
             <p>Welcome to the beginning of our forever.</p>
-            <button className="gold-button" onClick={() => changeStage('details')}>Enter our invitation <ArrowRight size={17} /></button>
+            <div className="stable-eyebrow">27 · 12 · 2026</div>
+            <button className="stable-button" onClick={() => transitionTo('details')}>Enter our invitation →</button>
           </div>
-          <div className="petals" aria-hidden="true">✦　·　✧　·　✦</div>
         </section>
       )}
 
       {stage === 'details' && (
-        <section className="details-stage">
-          <div className="details-heading"><p className="eyebrow">The celebration</p><h1>Join us<br/><em>on our day.</em></h1><p>Two places, one beautiful beginning.</p></div>
-          <div className="details-cards">
-            <article className="detail-card">
-              <div className="detail-image">{details.ceremonyImage ? <img src={details.ceremonyImage} alt={details.ceremonyName}/> : <div className="detail-placeholder">✦<span>CEREMONY</span></div>}</div>
-              <div className="detail-copy"><small>01 · WEDDING CEREMONY</small><h2>{details.ceremonyName}</h2><p>{details.ceremonyLocation}</p><button className="gold-button" onClick={()=>window.open('https://maps.google.com/?q='+encodeURIComponent(details.ceremonyLocation),'_blank')}>View location <ArrowRight size={16}/></button></div>
-            </article>
-            <article className="detail-card reverse">
-              <div className="detail-image">{details.venueImage ? <img src={details.venueImage} alt={details.venueName}/> : <div className="detail-placeholder">✦<span>RECEPTION</span></div>}</div>
-              <div className="detail-copy"><small>02 · RECEPTION VENUE</small><h2>{details.venueName}</h2><p>{details.venueLocation}</p><button className="gold-button" onClick={()=>window.open('https://maps.google.com/?q='+encodeURIComponent(details.venueLocation),'_blank')}>View location <ArrowRight size={16}/></button></div>
-            </article>
+        <section className="stable-stage">
+          <div className="stable-content">
+            <div className="stable-eyebrow">The celebration</div>
+            <h1>Join us <em>on our day.</em></h1>
+            <p>Wedding Ceremony · Ceremony Location</p>
+            <p>Wedding Reception · Reception Venue Location</p>
+            <button className="stable-button" onClick={() => transitionTo('guest')}>Continue →</button>
           </div>
-          <button className="details-continue" onClick={()=>changeStage('guest')}>Continue to invitation <ArrowRight size={17}/></button>
         </section>
       )}
 
       {stage === 'guest' && (
-        <section className="guest-stage">
-          <div className="guest-decoration"><Heart size={18} fill="currentColor" /></div>
-          <p className="eyebrow">A personal invitation</p>
-          <h1>May we know<br />who we’re welcoming?</h1>
-          <p className="lead">Enter your name and we’ll make this invitation a little more personal.</p>
-          <div className="guest-form">
-            <label htmlFor="guest-name">Your name</label>
-            <div className="guest-input">
-              <input id="guest-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && continueToGuest()} placeholder="Juan Dela Cruz" />
-              <button onClick={continueToGuest} aria-label="Continue"><ArrowRight /></button>
+        <section className="stable-stage">
+          <div className="stable-content">
+            <div className="stable-eyebrow">A personal invitation</div>
+            <h1>May we know <em>who we're welcoming?</em></h1>
+            <p>Enter your name and we’ll make this invitation personal.</p>
+            <div className="stable-fields">
+              <label htmlFor="guest-name">Your name</label>
+              <input id="guest-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Juan Dela Cruz" />
             </div>
-          </div>
-          <p className="hint">Try: Juan Dela Cruz or Maria Santos</p>
-        </section>
-      )}
-
-      {stage === 'rsvp' && guest && (
-        <section className="rsvp-stage">
-          <div className="rsvp-glow" />
-          <div className="rsvp-card">
-            <p className="eyebrow">Dear {guest.name}</p>
-            {guest.role ? (
-              <>
-                <p className="question-intro">Jhau &amp; Sheila have one little question for you…</p>
-                <h1>Will you be our <em>{guest.role}?</em></h1>
-              </>
-            ) : (
-              <>
-                <p className="question-intro">We’d love to celebrate this beautiful day with you.</p>
-                <h1>Can we save you a seat?</h1>
-              </>
-            )}
-            {rsvp === 'idle' ? (
-              <div className="rsvp-actions">
-                <button className="rsvp-yes" onClick={() => setRsvp('attending')}>I’d be honored <Heart size={17} /></button>
-                <button className="rsvp-no" onClick={() => setRsvp('declined')}>I’ll be cheering from afar <Sparkles size={17} /></button>
-              </div>
-            ) : (
-              <div className="response-box">
-                <p>{rsvp === 'attending' ? 'We’re so happy you’ll be there. 🤍' : 'We’ll miss celebrating with you in person.'}</p>
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Leave Jhau & Sheila a little message (optional)" />
-                <button className="gold-button" onClick={() => changeStage('welcome')}>{rsvp === 'attending' ? 'Confirm my RSVP' : 'Send my response'} <Check size={17} /></button>
-              </div>
-            )}
+            <button className="stable-button" onClick={() => alert(name ? `Welcome, ${name}!` : 'Please enter your name.')}>Continue →</button>
           </div>
         </section>
       )}
