@@ -7,116 +7,233 @@ type Stage = 'door' | 'welcome' | 'details' | 'guest';
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>('door');
-  const [scratched, setScratched] = useState(0);
+  const [reveal, setReveal] = useState(0);
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [name, setName] = useState('');
 
-  const transitionTo = (next: Stage) => {
+  const nextStage = (next: Stage) => {
     if (closing || stage === next) return;
     setClosing(true);
     setOpen(false);
     window.setTimeout(() => {
       setStage(next);
-      window.setTimeout(() => setClosing(false), 800);
+      window.setTimeout(() => setClosing(false), 850);
     }, 900);
   };
 
   useEffect(() => {
     if (!open || stage !== 'door' || closing) return;
-    const t = window.setTimeout(() => transitionTo('welcome'), 1100);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => nextStage('welcome'), 1250);
+    return () => window.clearTimeout(timer);
   }, [open, stage, closing]);
 
-  const reveal = (amount = 8) => {
+  const scratch = (amount: number) => {
     if (open || closing) return;
-    setScratched(v => {
-      const next = Math.min(100, v + amount);
-      if (next >= 100) setOpen(true);
-      return next;
+    setReveal(current => {
+      const value = Math.min(100, current + amount);
+      if (value >= 100) setOpen(true);
+      return value;
     });
   };
 
-  const scratch = (e: PointerEvent<HTMLButtonElement>) => {
+  const onScratch = (event: PointerEvent<HTMLButtonElement>) => {
     if (open || closing) return;
-    if (e.pointerType !== 'touch' && e.buttons !== 1) return;
-    reveal(4);
+    if (event.pointerType !== 'touch' && event.buttons !== 1) return;
+    scratch(4);
   };
 
   return (
-    <main className="wedding">
+    <main className="site">
       <style>{`
         *{box-sizing:border-box}
-        .wedding{min-height:100dvh;overflow:hidden;position:relative;background:#f5ede1;color:#44352a;font-family:Arial,sans-serif}
-        .paper{position:absolute;inset:0;opacity:.35;pointer-events:none;background-image:radial-gradient(#9b7a4a33 .7px,transparent .8px);background-size:8px 8px}
-        .stage{min-height:100dvh;display:grid;place-items:center;padding:20px}
-        .scene{width:min(1180px,100%);height:min(94dvh,900px);position:relative;display:grid;place-items:center}
-        .glow{position:absolute;inset:4%;border-radius:48% 48% 18px 18px;background:radial-gradient(circle at 50% 40%,#fffdf8,#efe0ca 58%,#d4ba8c);box-shadow:0 35px 100px #60472c25}
-        .arch{position:absolute;inset:4% 14%;border:2px solid #b89458;border-radius:50% 50% 16px 16px/34% 34% 16px 16px;background:#ead8b9;box-shadow:inset 0 0 0 9px #fff9ee66,0 0 0 8px #d7bc8b55;overflow:hidden}
-        .archin{position:absolute;inset:15px;border:1px solid #c7a56b;border-radius:50% 50% 10px 10px/34% 34% 10px 10px;overflow:hidden;background:#f7eee2}
-        .back{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#fffdf9,#ead7ba)}
-        .back img{width:min(43%,350px);aspect-ratio:3/4;object-fit:cover;border-radius:50% 50% 14px 14px;border:6px solid #fffaf1;box-shadow:0 20px 50px #52361f30}
-        .door{position:absolute;top:0;width:50%;height:100%;z-index:5;background:linear-gradient(95deg,#d5ba88,#f8f0e4 45%,#e5cca2);transition:transform 1.55s cubic-bezier(.76,0,.18,1);box-shadow:inset 0 0 0 1px #ad8248}
-        .door-left{left:0;transform-origin:left}.door-right{right:0;transform-origin:right}
-        .door:before{content:"";position:absolute;inset:5% 8% 12%;border:1px solid #b58d52;border-radius:48% 48% 8px 8px/29% 29% 8px 8px;box-shadow:inset 0 0 0 7px #fff9ed55}
-        .door:after{content:"❧   ❀   ❧";position:absolute;top:24%;left:50%;transform:translateX(-50%);font:26px Georgia,serif;letter-spacing:9px;color:#b08a52;white-space:nowrap}
-        .panel{position:absolute;inset:17% 17% 25%;border:1px solid #c09a5d;border-radius:40% 40% 8px 8px/24% 24% 8px 8px;box-shadow:inset 0 0 0 5px #fff8e933}
-        .handle{position:absolute;top:51%;width:20px;height:66px;border:2px solid #9e7540;border-radius:14px;background:linear-gradient(#d8b36e,#896232);z-index:8}
-        .door-left .handle{right:7px}.door-right .handle{left:7px}
-        .open .door-left{transform:translateX(-101%)}.open .door-right{transform:translateX(101%)}
-        .flowers{position:absolute;z-index:9;top:2%;bottom:4%;width:25%;pointer-events:none;color:#6b7658}
-        .flowers.left{left:0}.flowers.right{right:0;transform:scaleX(-1)}
-        .flowers:before{content:"✿  ❀  ❁  ✦";position:absolute;top:2%;left:0;font-size:clamp(28px,4vw,58px);transform:rotate(-15deg);text-shadow:0 8px 20px #49351e22}
-        .flowers:after{content:"❀  ✿  ❁";position:absolute;bottom:4%;left:-4%;font-size:clamp(30px,4vw,62px);transform:rotate(13deg)}
-        .lantern{position:absolute;z-index:10;top:29%;width:40px;height:72px;border:2px solid #9b7441;border-radius:11px;background:#fff9e844;box-shadow:0 0 28px #e9b85c66}
-        .lantern.left{left:12%}.lantern.right{right:12%}
-        .lantern:after{content:"";position:absolute;inset:13px 7px;background:#ffe2a766;border-radius:8px;box-shadow:0 0 22px #f1c66f}
-        .ornament{position:absolute;z-index:12;top:4%;left:50%;transform:translateX(-50%);font:16px Georgia,serif;letter-spacing:6px;color:#9e7848;white-space:nowrap}
-        .plaque{position:absolute;z-index:12;bottom:6%;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap;color:#6c543a}
-        .plaque strong{display:block;font:500 clamp(28px,4.5vw,52px)/1 Georgia,serif}.plaque small{font-size:9px;letter-spacing:5px;color:#987648}
-        .scratch{position:absolute;z-index:20;left:50%;top:54%;transform:translate(-50%,-50%);width:clamp(94px,13vw,140px);height:clamp(94px,13vw,140px);border-radius:50%;border:1px solid #c19d63;overflow:hidden;cursor:pointer;touch-action:none;background:#d4bd92;box-shadow:0 12px 35px #51351e30,inset 0 0 0 7px #fff8eb99}
-        .photo{position:absolute;inset:0;background:url('/couple-photo.png') center/cover;clip-path:circle(calc(12% + ${scratched * 0.88}%) at 50% 50%);transition:clip-path .15s linear}
-        .veil{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#f7ecd6,#c7a66d);opacity:${Math.max(0,1-scratched/100*.94)};transition:opacity .2s}
-        .veil span{font:600 8px Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:white;text-align:center;text-shadow:0 1px 3px #59401e}
-        .ring{position:absolute;inset:7px;border:1px dashed #fff8e2aa;border-radius:50%;pointer-events:none}
-        .hint{position:absolute;z-index:21;top:calc(54% + 78px);left:50%;transform:translateX(-50%);font:9px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;color:#7e603b;white-space:nowrap}
-        .pct{position:absolute;z-index:21;top:calc(54% + 96px);left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:1px;color:#a27c49}
-        .transition{position:fixed;z-index:100;inset:0;display:flex;pointer-events:none}.transition div{width:50%;height:100%;background:linear-gradient(95deg,#d5ba88,#f8f0e4 45%,#e5cca2);transition:transform .9s cubic-bezier(.76,0,.18,1)}.transition .l{transform:translateX(-101%)}.transition .r{transform:translateX(101%)}.transition.closed .l,.transition.closed .r{transform:translateX(0)}
-        .card{width:min(960px,94vw);min-height:min(720px,88dvh);position:relative;display:grid;place-items:center;text-align:center;padding:clamp(44px,8vw,90px);background:#fbf6ed;border:1px solid #c9aa72;box-shadow:0 35px 100px #5c422521}.card:before{content:"";position:absolute;inset:14px;border:1px solid #d8bf93;pointer-events:none}.card:after{content:"❦";position:absolute;top:23px;left:50%;transform:translateX(-50%);font:28px Georgia,serif;color:#b08b52}
-        .eyebrow{font:10px Arial,sans-serif;letter-spacing:5px;text-transform:uppercase;color:#997647}.card h1{font:500 clamp(54px,9vw,108px)/.86 Georgia,serif;margin:16px 0;color:#49382c}.card h1 em{font-style:italic;color:#b08c52}.card p{max-width:620px;margin:14px auto;color:#776656;line-height:1.8}.date{font:12px Arial,sans-serif;letter-spacing:6px;color:#967347;margin-top:25px}.btn{margin-top:28px;border:1px solid #b18b53;background:#b18b53;color:white;padding:14px 25px;border-radius:999px;font-size:12px;letter-spacing:1px;cursor:pointer}
-        .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:min(760px,100%);margin:30px auto}.detail{padding:26px 18px;border:1px solid #d7bf96;background:#fffaf3}.detail h3{font:500 25px Georgia,serif;margin:8px 0;color:#55402f}.detail p{font-size:12px;margin:5px auto}
-        .fields{width:min(480px,100%);margin:25px auto;text-align:left}.fields label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#876a49}.fields input{width:100%;margin-top:8px;padding:15px;border:1px solid #cdb58c;background:#fffdf9;outline:none;font:15px Arial;color:#3d3026}
-        @media(max-width:700px){.scene{height:92dvh}.arch{inset:7% 5%}.flowers{width:29%}.lantern{width:30px;height:58px}.lantern.left{left:5%}.lantern.right{right:5%}.grid{grid-template-columns:1fr}.card{min-height:82dvh;padding:50px 28px}.back img{width:46%}.plaque strong{font-size:30px}}
+        html,body{margin:0;padding:0}
+        body{background:#eee4d5}
+        button,input{font:inherit}
+
+        .site{min-height:100dvh;overflow:hidden;background:#f5eee3;color:#4d3b2e}
+        .grain{position:fixed;inset:0;pointer-events:none;z-index:80;opacity:.2;background-image:radial-gradient(#7a5a3520 .7px,transparent .8px);background-size:9px 9px}
+
+        .door-page{min-height:100dvh;display:grid;place-items:center;padding:14px}
+        .entrance{position:relative;width:min(1500px,100%);height:min(96dvh,900px);overflow:hidden;background:
+          radial-gradient(circle at 50% 38%,#fffaf0 0,#f3e4cd 43%,#d5bd94 100%);
+          box-shadow:0 30px 90px #4d382326;border:1px solid #c9ad7d}
+
+        .curtain{position:absolute;z-index:8;top:-5%;width:22%;height:110%;
+          background:linear-gradient(90deg,#fffdf8 0,#eadbc6 48%,#fffaf1 100%);
+          filter:drop-shadow(0 10px 20px #5b432425)}
+        .curtain:before,.curtain:after{content:"";position:absolute;top:0;bottom:0;width:45%;
+          background:repeating-linear-gradient(90deg,#fffaf2 0 14px,#eadac4 18px,#fffdf8 31px);opacity:.72}
+        .curtain:before{left:0;transform:skewY(7deg)}
+        .curtain:after{right:0;transform:skewY(-7deg)}
+        .curtain.left{left:-5%;transform:rotate(3deg)}
+        .curtain.right{right:-5%;transform:scaleX(-1) rotate(3deg)}
+
+        .greenery{position:absolute;z-index:7;top:0;width:32%;height:100%;pointer-events:none}
+        .greenery.left{left:0}.greenery.right{right:0;transform:scaleX(-1)}
+        .greenery:before{content:"❀  ✿  ❁  ✿  ❀";position:absolute;left:1%;top:3%;
+          color:#fffaf1;font:clamp(30px,4vw,62px) Georgia;letter-spacing:5px;text-shadow:0 8px 15px #3f332122}
+        .greenery:after{content:"❀  ❁  ✿  ❀";position:absolute;left:0;bottom:4%;
+          color:#fffaf1;font:clamp(34px,4.5vw,68px) Georgia;letter-spacing:3px;text-shadow:0 8px 15px #3f332122}
+        .leaf-cluster{position:absolute;inset:0;background:
+          radial-gradient(ellipse at 9% 18%,#647353 0 2%,transparent 2.4%),
+          radial-gradient(ellipse at 17% 28%,#7c8b69 0 2.3%,transparent 2.7%),
+          radial-gradient(ellipse at 8% 43%,#5d704e 0 2.5%,transparent 2.9%),
+          radial-gradient(ellipse at 20% 67%,#7b8b67 0 2.4%,transparent 2.8%),
+          radial-gradient(ellipse at 10% 80%,#607052 0 2.7%,transparent 3.1%);
+          opacity:.85}
+
+        .lantern{position:absolute;z-index:10;top:23%;width:44px;height:90px;border:2px solid #9b7542;
+          border-radius:10px;background:#fff8e733;box-shadow:0 0 30px #e7b85c88}
+        .lantern:before{content:"";position:absolute;left:50%;top:-18px;width:12px;height:18px;border:2px solid #9b7542;border-bottom:0;transform:translateX(-50%)}
+        .lantern:after{content:"";position:absolute;inset:15px 8px;background:#ffe4a76e;border-radius:6px;box-shadow:0 0 24px #efbd5e}
+        .lantern.left{left:18%}.lantern.right{right:18%}
+
+        .arch{position:absolute;z-index:2;left:50%;top:5%;width:min(63%,850px);height:91%;transform:translateX(-50%);
+          border:8px solid #efe1cb;border-bottom-width:5px;border-radius:48% 48% 8px 8px;
+          box-shadow:0 0 0 2px #b9945a,0 0 0 15px #fffaf055,0 28px 55px #513a2322;
+          background:#f9f0e2;overflow:hidden}
+        .arch:before{content:"";position:absolute;inset:14px;border:2px solid #b99359;border-radius:47% 47% 5px 5px;box-shadow:inset 0 0 0 7px #fffaf055}
+        .inside{position:absolute;inset:24px;background:#fff8ee;overflow:hidden}
+        .couple{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#fffdf8,#e8d5b8)}
+        .couple img{width:43%;max-width:330px;aspect-ratio:3/4;object-fit:cover;border:7px solid #fffaf0;border-radius:48% 48% 12px 12px;box-shadow:0 20px 45px #4f382622}
+
+        .door{position:absolute;z-index:5;top:0;width:50%;height:100%;
+          background:linear-gradient(100deg,#eadbc6,#fffaf1 52%,#e2c99d);
+          transition:transform 1.65s cubic-bezier(.76,0,.16,1);box-shadow:inset 0 0 0 1px #b99358}
+        .door.left{left:0;transform-origin:left}
+        .door.right{right:0;transform-origin:right}
+        .open .door.left{transform:translateX(-101%)}
+        .open .door.right{transform:translateX(101%)}
+        .door:before{content:"";position:absolute;inset:7% 10% 23%;border:2px solid #b88e50;border-radius:48% 48% 5px 5px/29% 29% 5px 5px;box-shadow:inset 0 0 0 7px #fff8ea55}
+        .door:after{content:"";position:absolute;inset:12% 17% 29%;border:1px solid #d1b17a;border-radius:45% 45% 5px 5px/25% 25% 5px 5px}
+        .vine{position:absolute;top:15%;bottom:28%;width:30%;color:#a17c49;font:clamp(24px,3vw,42px) Georgia;line-height:1.8;text-align:center}
+        .door.left .vine{right:16%}.door.right .vine{left:16%}
+        .knob{position:absolute;top:48%;width:17px;height:65px;border:2px solid #98703a;border-radius:12px;background:linear-gradient(#e4c17d,#956a35);z-index:8}
+        .door.left .knob{right:7px}.door.right .knob{left:7px}
+
+        .brand{position:absolute;z-index:12;top:4%;left:50%;transform:translateX(-50%);white-space:nowrap;text-align:center;
+          color:#8e6b3e;letter-spacing:4px;font:11px Arial,sans-serif}
+        .brand strong{display:block;font:500 18px Georgia,serif;letter-spacing:7px;color:#705333;margin-bottom:5px}
+
+        .scratch{position:absolute;z-index:20;left:50%;top:64%;width:92px;height:92px;transform:translate(-50%,-50%);
+          border-radius:50%;border:1px solid #b58b50;background:#cbb17f;overflow:hidden;cursor:pointer;touch-action:none;
+          box-shadow:0 10px 30px #4b351f35,inset 0 0 0 5px #fff8eaaa}
+        .scratch-photo{position:absolute;inset:0;background:url("/couple-photo.png") center/cover;
+          clip-path:circle(calc(8% + ${reveal * .92}%) at 50% 50%);transition:clip-path .14s linear}
+        .scratch-cover{position:absolute;inset:0;display:grid;place-items:center;
+          background:radial-gradient(circle at 35% 25%,#efe0c6,#b18a51);opacity:${1-reveal/100*.96};transition:opacity .2s}
+        .scratch-cover span{font:600 7px Arial,sans-serif;letter-spacing:1.5px;color:white;text-transform:uppercase;text-align:center}
+        .scratch-ring{position:absolute;inset:6px;border:1px dashed #fff8e0aa;border-radius:50%;pointer-events:none}
+        .scratch-label{position:absolute;z-index:21;top:calc(64% + 58px);left:50%;transform:translateX(-50%);
+          color:#8e6c43;font:9px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;white-space:nowrap}
+
+        .transition{position:fixed;inset:0;z-index:100;display:flex;pointer-events:none}
+        .transition div{width:50%;height:100%;background:linear-gradient(100deg,#eadbc6,#fffaf1 52%,#e2c99d);
+          transition:transform .9s cubic-bezier(.76,0,.16,1)}
+        .transition .l{transform:translateX(-101%)}.transition .r{transform:translateX(101%)}
+        .transition.closed .l,.transition.closed .r{transform:translateX(0)}
+
+        .page{min-height:100dvh;display:grid;place-items:center;padding:22px;background:
+          radial-gradient(circle at 50% 20%,#fffdf8,#f2e8d8 70%,#e0cda9)}
+        .invitation{position:relative;width:min(1000px,94vw);min-height:min(760px,88dvh);display:grid;place-items:center;text-align:center;
+          padding:70px 7%;background:#fffaf1;border:1px solid #b9955e;box-shadow:0 30px 90px #513a2222}
+        .invitation:before{content:"";position:absolute;inset:14px;border:1px solid #d7bd91;pointer-events:none}
+        .eyebrow{font:9px Arial,sans-serif;letter-spacing:5px;text-transform:uppercase;color:#947044}
+        h1{font:500 clamp(52px,8vw,100px)/.9 Georgia,serif;color:#4e3a2c;margin:17px 0}
+        h1 em{font-style:italic;color:#ae8650}
+        .copy{max-width:650px;color:#776454;line-height:1.9;margin:0 auto}
+        .date{margin-top:25px;font:11px Arial,sans-serif;letter-spacing:6px;color:#957144}
+        .button{margin-top:30px;border:1px solid #ae8750;border-radius:999px;background:#ae8750;color:white;padding:13px 25px;cursor:pointer;font-size:11px;letter-spacing:1px}
+        .details{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:min(760px,100%);margin:30px auto}
+        .detail{padding:27px 18px;border:1px solid #d9c19a;background:#fffdf8}
+        .detail h2{font:500 25px Georgia,serif;color:#57402f;margin:8px}
+        .detail p{font-size:12px;color:#776454;margin:6px}
+        .field{width:min(480px,100%);text-align:left;margin:25px auto}
+        .field label{display:block;font:9px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;color:#876846}
+        .field input{width:100%;margin-top:8px;padding:14px;border:1px solid #ccb38a;background:white;outline:none;color:#4b392c}
+        @media(max-width:700px){
+          .entrance{height:94dvh}.arch{width:88%;top:7%;height:86%}.curtain{width:30%}.greenery{width:38%}
+          .lantern{width:32px;height:65px}.lantern.left{left:8%}.lantern.right{right:8%}
+          .brand strong{font-size:14px}.scratch{width:82px;height:82px}.scratch-label{top:calc(64% + 52px)}
+          .details{grid-template-columns:1fr}.invitation{min-height:82dvh;padding:55px 25px}
+        }
       `}</style>
 
-      <div className="paper" />
-      <div className={`transition ${closing ? 'closed' : ''}`} aria-hidden="true"><div className="l"/><div className="r"/></div>
+      <div className="grain" />
+
+      <div className={`transition ${closing ? 'closed' : ''}`} aria-hidden="true">
+        <div className="l" /><div className="r" />
+      </div>
 
       {stage === 'door' && (
-        <section className="stage">
-          <div className={`scene ${open ? 'open' : ''}`}>
-            <div className="glow"/>
+        <section className="door-page">
+          <div className={`entrance ${open ? 'open' : ''}`}>
+            <div className="curtain left" /><div className="curtain right" />
+            <div className="greenery left"><div className="leaf-cluster" /></div>
+            <div className="greenery right"><div className="leaf-cluster" /></div>
+            <div className="lantern left" /><div className="lantern right" />
+
             <div className="arch">
-              <div className="archin">
-                <div className="back"><img src="/couple-photo.png" alt="Jhau and Sheila"/></div>
-                <div className="door door-left"><div className="panel"/><span className="handle"/></div>
-                <div className="door door-right"><div className="panel"/><span className="handle"/></div>
+              <div className="inside">
+                <div className="couple">
+                  <img src="/couple-photo.png" alt="Jhau and Sheila" />
+                </div>
+                <div className="door left"><div className="vine">❧<br/>✿<br/>❁<br/>❧</div><span className="knob" /></div>
+                <div className="door right"><div className="vine">❧<br/>✿<br/>❁<br/>❧</div><span className="knob" /></div>
               </div>
             </div>
-            <div className="flowers left"/><div className="flowers right"/>
-            <div className="lantern left"/><div className="lantern right"/>
-            <div className="ornament">❦  JHAU &amp; SHEILA  ❦</div>
-            {!open && <><button className="scratch" aria-label="Scratch to reveal our photo" onPointerMove={scratch} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);reveal(12)}}><span className="photo"/><span className="veil"><span>Scratch<br/>to reveal</span></span><span className="ring"/></button><div className="hint">Scratch the circle to open the doors</div><div className="pct">{Math.round(scratched)}%</div></>}
-            <div className="plaque"><strong>Jhau &amp; Sheila</strong><small>DECEMBER 27, 2026</small></div>
+
+            <div className="brand">
+              <strong>JHAU &amp; SHEILA</strong>
+              DECEMBER 27 · 2026
+            </div>
+
+            {!open && (
+              <>
+                <button className="scratch" onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); scratch(12); }} onPointerMove={onScratch} aria-label="Scratch to reveal">
+                  <span className="scratch-photo" />
+                  <span className="scratch-cover"><span>Scratch<br/>to reveal</span></span>
+                  <span className="scratch-ring" />
+                </button>
+                <div className="scratch-label">Scratch the circle to open</div>
+              </>
+            )}
           </div>
         </section>
       )}
 
-      {stage === 'welcome' && <section className="stage"><div className="card"><div><div className="eyebrow">Together with our families</div><h1>Jhau <em>&amp;</em> Sheila</h1><p>We invite you to witness the beginning of our forever and celebrate a day filled with love, family, and beautiful memories.</p><div className="date">DECEMBER 27 · 2026</div><button className="btn" onClick={()=>transitionTo('details')}>Continue to our invitation →</button></div></div></section>}
+      {stage === 'welcome' && (
+        <section className="page"><div className="invitation"><div>
+          <div className="eyebrow">Together with our families</div>
+          <h1>Jhau <em>&amp;</em> Sheila</h1>
+          <p className="copy">We invite you to witness the beginning of our forever and celebrate a day filled with love, family, and beautiful memories.</p>
+          <div className="date">DECEMBER 27 · 2026</div>
+          <button className="button" onClick={() => nextStage('details')}>Continue to our invitation →</button>
+        </div></div></section>
+      )}
 
-      {stage === 'details' && <section className="stage"><div className="card"><div><div className="eyebrow">The celebration</div><h1>Our <em>day</em></h1><div className="grid"><div className="detail"><div className="eyebrow">Ceremony</div><h3>Wedding Ceremony</h3><p>December 27, 2026</p><p>Ceremony Location</p></div><div className="detail"><div className="eyebrow">Reception</div><h3>Wedding Reception</h3><p>Following the ceremony</p><p>Reception Venue Location</p></div></div><button className="btn" onClick={()=>transitionTo('guest')}>Continue →</button></div></div></section>}
+      {stage === 'details' && (
+        <section className="page"><div className="invitation"><div>
+          <div className="eyebrow">The celebration</div>
+          <h1>Our <em>day</em></h1>
+          <div className="details">
+            <div className="detail"><div className="eyebrow">Ceremony</div><h2>Wedding Ceremony</h2><p>December 27, 2026</p><p>Ceremony Location</p></div>
+            <div className="detail"><div className="eyebrow">Reception</div><h2>Wedding Reception</h2><p>Following the ceremony</p><p>Reception Venue Location</p></div>
+          </div>
+          <button className="button" onClick={() => nextStage('guest')}>Continue →</button>
+        </div></div></section>
+      )}
 
-      {stage === 'guest' && <section className="stage"><div className="card"><div><div className="eyebrow">A personal invitation</div><h1>Welcome, <em>dear guest.</em></h1><p>Tell us your name so we can make your invitation personal.</p><div className="fields"><label htmlFor="guest-name">Your name</label><input id="guest-name" value={name} onChange={e=>setName(e.target.value)} placeholder="Juan Dela Cruz"/></div><button className="btn" onClick={()=>alert(name ? `Welcome, ${name}!` : 'Please enter your name.')}>Continue →</button></div></div></section>}
+      {stage === 'guest' && (
+        <section className="page"><div className="invitation"><div>
+          <div className="eyebrow">A personal invitation</div>
+          <h1>Welcome, <em>dear guest.</em></h1>
+          <p className="copy">Tell us your name so we can make your invitation personal.</p>
+          <div className="field"><label htmlFor="guest-name">Your name</label><input id="guest-name" value={name} onChange={e => setName(e.target.value)} placeholder="Juan Dela Cruz" /></div>
+          <button className="button" onClick={() => alert(name ? `Welcome, ${name}!` : 'Please enter your name.')}>Continue →</button>
+        </div></div></section>
+      )}
     </main>
   );
 }
