@@ -47,7 +47,7 @@ export default function Home() {
       .door-stage{min-height:100dvh;display:grid;place-items:center;padding:0}
       .entrance{position:relative;width:100%;height:100dvh;overflow:hidden;background:#eadcc8}
       .door-photo{position:absolute;inset:0;background:url("/door.webp") center/cover no-repeat}
-      .couple-reveal{position:absolute;inset:0;background:url("/couple-photo.webp") center/cover no-repeat;transform:scale(1.02)}
+      .couple-reveal{position:absolute;inset:0;background:url("/couple-photo.webp") center/cover no-repeat;transform:scale(1.02);opacity:0;transition:opacity .65s ease;z-index:1}.entrance.open .couple-reveal{opacity:1}
       .door-half{position:absolute;top:0;width:50%;height:100%;z-index:5;background-image:url("/door.webp");background-size:200% 100%;background-repeat:no-repeat;transition:transform 1.7s cubic-bezier(.76,0,.16,1)}
       .door-half.left{left:0;background-position:left center;transform-origin:left}
       .door-half.right{right:0;background-position:right center;transform-origin:right}
