@@ -28,14 +28,19 @@ export default function Home() {
     }, 850);
   };
 
+  const addScratch = (amount = 8) => {
+    if (open || closing) return;
+    setScratched((current) => {
+      const next = Math.min(100, current + amount);
+      if (next >= 100) setOpen(true);
+      return next;
+    });
+  };
+
   const scratch = (event: PointerEvent<HTMLDivElement>) => {
     if (open || closing) return;
-    if (event.buttons !== 1) return;
-    const next = Math.min(100, scratched + 5);
-    setScratched(next);
-    if (next >= 100) {
-      setOpen(true);
-    }
+    if (event.pointerType !== 'touch' && event.buttons !== 1) return;
+    addScratch(5);
   };
 
   return (
@@ -89,7 +94,7 @@ export default function Home() {
             <div className="stable-door stable-left"><span className="stable-handle">◈</span></div>
             <div className="stable-door stable-right"><span className="stable-handle">◈</span></div>
             {!open && (
-              <div className="stable-scratch" onPointerMove={scratch} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setScratched(Math.min(100, scratched + 8)); }}>
+              <div className="stable-scratch" onPointerMove={scratch} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); addScratch(8); }}>
                 <div>
                   <strong>Scratch the center</strong><br />
                   <small>Reveal Jhau &amp; Sheila to open the doors</small>
