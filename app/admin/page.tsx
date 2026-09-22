@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ImagePlus, Palette, Save, Upload, X } from 'lucide-react';
 
-type Theme={bg:string;accent:string;text:string;door:string;style:string};
+type Theme={bg:string;accent:string;text:string;door:string;style:string;name:string};
 const presets:Record<string,Theme>={
- classic:{bg:'#f3ecdf',accent:'#b99559',text:'#2d2722',door:'#e9dcc5',style:'classic'},
- garden:{bg:'#edf0e5',accent:'#7f966f',text:'#283027',door:'#dfe6d5',style:'garden'},
- modern:{bg:'#eeeef0',accent:'#6e6678',text:'#29272d',door:'#d8d7dd',style:'modern'}
+ champagne:{name:'Timeless Champagne',bg:'#f3ecdf',accent:'#b99559',text:'#2d2722',door:'#e9dcc5',style:'champagne'},
+ garden:{name:'Botanical Garden',bg:'#edf0e5',accent:'#7f966f',text:'#283027',door:'#dfe6d5',style:'garden'},
+ pearl:{name:'Pearl & Ivory',bg:'#faf7f0',accent:'#c8ad7a',text:'#3d3730',door:'#eee7da',style:'pearl'},
+ burgundy:{name:'Burgundy Romance',bg:'#f2e8e4',accent:'#7b3f46',text:'#342427',door:'#e4d4cf',style:'burgundy'},
+ blackgold:{name:'Modern Black & Gold',bg:'#171615',accent:'#c6a15b',text:'#f4eee3',door:'#282522',style:'blackgold'},
+ coastal:{name:'Coastal Romance',bg:'#edf2f1',accent:'#879da0',text:'#2f3d3d',door:'#e5ded0',style:'coastal'}
 };
 
 export default function Admin(){
