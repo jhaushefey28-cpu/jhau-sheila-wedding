@@ -159,7 +159,7 @@
 
   /* ---------- door ---------- */
   #stage-door{background:var(--ivory);}
-  .door-wrap{ position:relative; width:min(420px,86vw); height:min(620px,74vh); }
+  .door-wrap{ position:relative; width:min(420px,86vw); height:min(620px,74vh); perspective:1400px; }
   .door-frame{
     position:absolute; inset:0; border-radius:210px 210px 6px 6px;
     background: linear-gradient(180deg,#FBF7EE,#F1E9D6);
@@ -498,37 +498,42 @@
   function drawFoil(){
     var w = canvas.width, h = canvas.height;
     var g = ctx.createLinearGradient(0,0,w,h);
-    g.addColorStop(0, '#F4E6C4');
-    g.addColorStop(.5, '#E8D19C');
-    g.addColorStop(1, '#D9BD7D');
+    g.addColorStop(0, '#EFDFB8');
+    g.addColorStop(.45, '#DEC17F');
+    g.addColorStop(.55, '#E9CE93');
+    g.addColorStop(1, '#CBA85F');
     ctx.fillStyle = g;
     ctx.fillRect(0,0,w,h);
 
-    // fine diagonal foil texture
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,.28)';
-    ctx.lineWidth = 1;
-    for(var x=-h; x<w; x+=6){
-      ctx.beginPath();
-      ctx.moveTo(x,0);
-      ctx.lineTo(x+h,h);
-      ctx.stroke();
+    // fine metallic grain (random speckle), gives a real foil-card look
+    for(var n=0; n<Math.round(w*h/9); n++){
+      var gx = Math.random()*w, gy = Math.random()*h;
+      var shade = Math.random();
+      ctx.fillStyle = shade > .5 ? 'rgba(255,255,255,'+(Math.random()*.10)+')' : 'rgba(90,66,30,'+(Math.random()*.08)+')';
+      ctx.fillRect(gx, gy, 1, 1);
     }
-    ctx.restore();
 
-    // inset ornamental border
-    ctx.strokeStyle = 'rgba(120,90,40,.35)';
+    // soft sheen sweep
+    var sheen = ctx.createLinearGradient(0,0,w*.6,h*.6);
+    sheen.addColorStop(0,'rgba(255,255,255,.22)');
+    sheen.addColorStop(.5,'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0,0,w,h);
+
+    // thin ornamental border
+    ctx.strokeStyle = 'rgba(120,90,40,.4)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(10,10,w-20,h-20);
+    ctx.strokeRect(9,9,w-18,h-18);
 
-    // monogram + label
-    ctx.fillStyle = 'rgba(90,66,30,.55)';
+    // small centered mark, understated
+    ctx.fillStyle = 'rgba(80,58,26,.6)';
     ctx.textAlign = 'center';
     var initials = ((CFG.partner1||'J')[0] + ' & ' + (CFG.partner2||'S')[0]);
-    ctx.font = '500 '+Math.round(h*0.16)+'px "Cormorant Garamond", serif';
-    ctx.fillText(initials, w/2, h*0.46);
-    ctx.font = '400 '+Math.max(11,Math.round(h*0.05))+'px "Jost", sans-serif';
-    ctx.fillText('S C R A T C H   T O   R E V E A L', w/2, h*0.62);
+    ctx.font = '500 '+Math.round(h*0.1)+'px "Cormorant Garamond", serif';
+    ctx.fillText(initials, w/2, h*0.5);
+    ctx.font = '400 '+Math.max(10,Math.round(h*0.032))+'px "Jost", sans-serif';
+    ctx.fillStyle = 'rgba(80,58,26,.5)';
+    ctx.fillText('scratch to reveal', w/2, h*0.62);
   }
 
   function sizeCanvas(force){
@@ -557,7 +562,7 @@
     ctx.globalCompositeOperation = 'destination-out';
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.lineWidth = 46 + Math.random()*10;
+    ctx.lineWidth = 62 + Math.random()*14;
     ctx.beginPath();
     if(lastPt){ ctx.moveTo(lastPt.x, lastPt.y); } else { ctx.moveTo(x-0.1,y-0.1); }
     ctx.lineTo(x,y);
@@ -571,19 +576,30 @@
     var cleared=0, total=0;
     for(var i=3;i<data.length;i+=4*9){ total++; if(data[i]===0) cleared++; }
     var ratio = cleared/total;
-    if(!hintShown.half && ratio > 0.22){
+    if(!hintShown.half && ratio > 0.15){
       hintShown.half = true;
       $('#door-caption').textContent = 'Almost there…';
     }
-    if(ratio > 0.5){
+    if(ratio > 0.35){
       revealed = true;
       canvas.style.transition='opacity .6s ease';
       canvas.style.opacity='0';
+      advanceThroughDoor();
+    }
+  }
+
+  function advanceThroughDoor(){
+    try{
       door.classList.add('revealed');
       setTimeout(function(){
         door.classList.add('open');
-        setTimeout(function(){ goTo('welcome'); }, 900);
-      }, 500);
+      }, 450);
+      setTimeout(function(){
+        goTo('welcome');
+      }, 1550);
+    }catch(err){
+      // safety net: never leave the guest stranded on the door
+      goTo('welcome');
     }
   }
   var drawing=false;
