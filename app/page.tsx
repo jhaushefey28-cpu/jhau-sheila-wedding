@@ -45,7 +45,7 @@ export default function Home() {
 
   return (
     <main className="wedding">
-      <style>{\`
+      <style>{`
         *{box-sizing:border-box}
         .wedding{min-height:100dvh;overflow:hidden;position:relative;background:#f5ede1;color:#44352a;font-family:Arial,sans-serif}
         .paper{position:absolute;inset:0;opacity:.35;pointer-events:none;background-image:radial-gradient(#9b7a4a33 .7px,transparent .8px);background-size:8px 8px}
@@ -75,8 +75,8 @@ export default function Home() {
         .plaque{position:absolute;z-index:12;bottom:6%;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap;color:#6c543a}
         .plaque strong{display:block;font:500 clamp(28px,4.5vw,52px)/1 Georgia,serif}.plaque small{font-size:9px;letter-spacing:5px;color:#987648}
         .scratch{position:absolute;z-index:20;left:50%;top:54%;transform:translate(-50%,-50%);width:clamp(94px,13vw,140px);height:clamp(94px,13vw,140px);border-radius:50%;border:1px solid #c19d63;overflow:hidden;cursor:pointer;touch-action:none;background:#d4bd92;box-shadow:0 12px 35px #51351e30,inset 0 0 0 7px #fff8eb99}
-        .photo{position:absolute;inset:0;background:url('/couple-photo.png') center/cover;clip-path:circle(calc(12% + \${scratched * 0.88}%) at 50% 50%);transition:clip-path .15s linear}
-        .veil{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#f7ecd6,#c7a66d);opacity:\${Math.max(0,1-scratched/100*.94)};transition:opacity .2s}
+        .photo{position:absolute;inset:0;background:url('/couple-photo.png') center/cover;clip-path:circle(calc(12% + ${scratched * 0.88}%) at 50% 50%);transition:clip-path .15s linear}
+        .veil{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#f7ecd6,#c7a66d);opacity:${Math.max(0,1-scratched/100*.94)};transition:opacity .2s}
         .veil span{font:600 8px Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:white;text-align:center;text-shadow:0 1px 3px #59401e}
         .ring{position:absolute;inset:7px;border:1px dashed #fff8e2aa;border-radius:50%;pointer-events:none}
         .hint{position:absolute;z-index:21;top:calc(54% + 78px);left:50%;transform:translateX(-50%);font:9px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;color:#7e603b;white-space:nowrap}
@@ -87,14 +87,14 @@ export default function Home() {
         .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:min(760px,100%);margin:30px auto}.detail{padding:26px 18px;border:1px solid #d7bf96;background:#fffaf3}.detail h3{font:500 25px Georgia,serif;margin:8px 0;color:#55402f}.detail p{font-size:12px;margin:5px auto}
         .fields{width:min(480px,100%);margin:25px auto;text-align:left}.fields label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#876a49}.fields input{width:100%;margin-top:8px;padding:15px;border:1px solid #cdb58c;background:#fffdf9;outline:none;font:15px Arial;color:#3d3026}
         @media(max-width:700px){.scene{height:92dvh}.arch{inset:7% 5%}.flowers{width:29%}.lantern{width:30px;height:58px}.lantern.left{left:5%}.lantern.right{right:5%}.grid{grid-template-columns:1fr}.card{min-height:82dvh;padding:50px 28px}.back img{width:46%}.plaque strong{font-size:30px}}
-      \`}</style>
+      `}</style>
 
       <div className="paper" />
-      <div className={\`transition \${closing ? 'closed' : ''}\`} aria-hidden="true"><div className="l"/><div className="r"/></div>
+      <div className={`transition ${closing ? 'closed' : ''}`} aria-hidden="true"><div className="l"/><div className="r"/></div>
 
       {stage === 'door' && (
         <section className="stage">
-          <div className={\`scene \${open ? 'open' : ''}\`}>
+          <div className={`scene ${open ? 'open' : ''}`}>
             <div className="glow"/>
             <div className="arch">
               <div className="archin">
@@ -116,7 +116,7 @@ export default function Home() {
 
       {stage === 'details' && <section className="stage"><div className="card"><div><div className="eyebrow">The celebration</div><h1>Our <em>day</em></h1><div className="grid"><div className="detail"><div className="eyebrow">Ceremony</div><h3>Wedding Ceremony</h3><p>December 27, 2026</p><p>Ceremony Location</p></div><div className="detail"><div className="eyebrow">Reception</div><h3>Wedding Reception</h3><p>Following the ceremony</p><p>Reception Venue Location</p></div></div><button className="btn" onClick={()=>transitionTo('guest')}>Continue →</button></div></div></section>}
 
-      {stage === 'guest' && <section className="stage"><div className="card"><div><div className="eyebrow">A personal invitation</div><h1>Welcome, <em>dear guest.</em></h1><p>Tell us your name so we can make your invitation personal.</p><div className="fields"><label htmlFor="guest-name">Your name</label><input id="guest-name" value={name} onChange={e=>setName(e.target.value)} placeholder="Juan Dela Cruz"/></div><button className="btn" onClick={()=>alert(name ? \`Welcome, \${name}!\` : 'Please enter your name.')}>Continue →</button></div></div></section>}
+      {stage === 'guest' && <section className="stage"><div className="card"><div><div className="eyebrow">A personal invitation</div><h1>Welcome, <em>dear guest.</em></h1><p>Tell us your name so we can make your invitation personal.</p><div className="fields"><label htmlFor="guest-name">Your name</label><input id="guest-name" value={name} onChange={e=>setName(e.target.value)} placeholder="Juan Dela Cruz"/></div><button className="btn" onClick={()=>alert(name ? `Welcome, ${name}!` : 'Please enter your name.')}>Continue →</button></div></div></section>}
     </main>
   );
 }
