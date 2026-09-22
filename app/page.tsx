@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PointerEvent } from 'react';
 
 type Stage = 'door' | 'welcome' | 'details' | 'guest';
@@ -11,6 +11,12 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [name, setName] = useState('');
+
+  useEffect(() => {
+    if (!open || stage !== 'door' || closing) return;
+    const timer = window.setTimeout(() => transitionTo('welcome'), 900);
+    return () => window.clearTimeout(timer);
+  }, [open, stage, closing]);
 
   const transitionTo = (next: Stage) => {
     if (closing || stage === next) return;
