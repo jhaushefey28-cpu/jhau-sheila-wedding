@@ -194,11 +194,11 @@
   }
   .scratch-under{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    background: radial-gradient(circle at 50% 40%, #fff, var(--ivory));
+    background: radial-gradient(circle at 50% 38%, #fff, var(--ivory));
     font-family:'Cormorant Garamond',serif; color:var(--gold); font-size:2.6rem; text-align:center;
   }
   .scratch-under img{width:100%;height:100%;object-fit:cover;}
-  #scratch-canvas{position:absolute; inset:0; touch-action:none; cursor:pointer;}
+  #scratch-canvas{position:absolute; inset:0; touch-action:none; cursor:pointer; z-index:6;}
 
   .door-caption{
     position:absolute; bottom:6%; left:0; right:0; text-align:center;
@@ -493,38 +493,89 @@
   var ctx = canvas.getContext('2d');
   var scratchWrap = $('#scratch-wrap');
   var revealed = false;
+  var canvasW = 0, canvasH = 0;
 
-  function sizeCanvas(){
-    var r = scratchWrap.getBoundingClientRect();
-    canvas.width = r.width; canvas.height = r.height;
-    ctx.fillStyle = '#EFE6D0';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = 'rgba(180,145,63,.55)';
-    ctx.font = '600 13px Jost, sans-serif';
+  function drawFoil(){
+    var w = canvas.width, h = canvas.height;
+    var g = ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0, '#F4E6C4');
+    g.addColorStop(.5, '#E8D19C');
+    g.addColorStop(1, '#D9BD7D');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    // fine diagonal foil texture
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.28)';
+    ctx.lineWidth = 1;
+    for(var x=-h; x<w; x+=6){
+      ctx.beginPath();
+      ctx.moveTo(x,0);
+      ctx.lineTo(x+h,h);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // inset ornamental border
+    ctx.strokeStyle = 'rgba(120,90,40,.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(10,10,w-20,h-20);
+
+    // monogram + label
+    ctx.fillStyle = 'rgba(90,66,30,.55)';
     ctx.textAlign = 'center';
-    ctx.fillText('Scratch to reveal', canvas.width/2, canvas.height/2);
+    var initials = ((CFG.partner1||'J')[0] + ' & ' + (CFG.partner2||'S')[0]);
+    ctx.font = '500 '+Math.round(h*0.16)+'px "Cormorant Garamond", serif';
+    ctx.fillText(initials, w/2, h*0.46);
+    ctx.font = '400 '+Math.max(11,Math.round(h*0.05))+'px "Jost", sans-serif';
+    ctx.fillText('S C R A T C H   T O   R E V E A L', w/2, h*0.62);
   }
-  sizeCanvas();
-  window.addEventListener('resize', sizeCanvas);
+
+  function sizeCanvas(force){
+    var r = scratchWrap.getBoundingClientRect();
+    var w = Math.round(r.width), h = Math.round(r.height);
+    if(!force && Math.abs(w-canvasW) < 4 && Math.abs(h-canvasH) < 4) return; // ignore trivial mobile viewport jitter
+    if(revealed) return; // never redraw over an already-revealed photo
+    canvasW = w; canvasH = h;
+    canvas.width = w; canvas.height = h;
+    drawFoil();
+  }
+  sizeCanvas(true);
+  var resizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){ sizeCanvas(false); }, 300);
+  });
 
   function pos(e){
     var r = canvas.getBoundingClientRect();
     var p = e.touches ? e.touches[0] : e;
     return {x: p.clientX - r.left, y: p.clientY - r.top};
   }
-  function erase(x,y){
+  var lastPt = null;
+  function scratchTo(x,y){
     ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 46 + Math.random()*10;
     ctx.beginPath();
-    ctx.arc(x,y,26,0,Math.PI*2);
-    ctx.fill();
+    if(lastPt){ ctx.moveTo(lastPt.x, lastPt.y); } else { ctx.moveTo(x-0.1,y-0.1); }
+    ctx.lineTo(x,y);
+    ctx.stroke();
+    lastPt = {x:x,y:y};
   }
+  var hintShown = {half:false};
   function checkReveal(){
     if(revealed) return;
     var data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-    var cleared=0, total=data.length/4;
-    for(var i=3;i<data.length;i+=4*11){ if(data[i]===0) cleared++; }
-    var ratio = cleared/(total/11);
-    if(ratio > 0.55){
+    var cleared=0, total=0;
+    for(var i=3;i<data.length;i+=4*9){ total++; if(data[i]===0) cleared++; }
+    var ratio = cleared/total;
+    if(!hintShown.half && ratio > 0.22){
+      hintShown.half = true;
+      $('#door-caption').textContent = 'Almost there…';
+    }
+    if(ratio > 0.5){
       revealed = true;
       canvas.style.transition='opacity .6s ease';
       canvas.style.opacity='0';
@@ -536,9 +587,9 @@
     }
   }
   var drawing=false;
-  function start(e){ drawing=true; var p=pos(e); erase(p.x,p.y); checkReveal(); e.preventDefault(); }
-  function move(e){ if(!drawing) return; var p=pos(e); erase(p.x,p.y); checkReveal(); e.preventDefault(); }
-  function end(){ drawing=false; }
+  function start(e){ drawing=true; lastPt=null; var p=pos(e); scratchTo(p.x,p.y); checkReveal(); e.preventDefault(); }
+  function move(e){ if(!drawing) return; var p=pos(e); scratchTo(p.x,p.y); checkReveal(); e.preventDefault(); }
+  function end(){ drawing=false; lastPt=null; }
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
   window.addEventListener('mouseup', end);
