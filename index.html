@@ -25,18 +25,32 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   *,*::before,*::after{box-sizing:inherit;}
+  :root{ --photo-filter: none; }
+  body[data-theme="golden-hour"]{
+    --ivory:#F8EFDD; --paper:#FFFBF3; --ink:#3A2E1C; --ink-soft:#6B5A3E;
+    --gold:#C08A2E; --gold-soft:#E7C583; --pine:#5C4A22; --rose:#B3702F;
+    --photo-filter: brightness(1.04) saturate(1.1) sepia(.12) contrast(1.02);
+  }
   body[data-theme="romantic-blush"]{
     --ivory:#F7E9E6; --paper:#FFF8F6; --ink:#3A2430; --ink-soft:#6E5560;
     --gold:#C08A6B; --gold-soft:#E8C7B8; --pine:#7A4E5A; --rose:#B85C6B;
+    --photo-filter: brightness(1.05) saturate(1.06) hue-rotate(-4deg);
   }
-  body[data-theme="emerald-gold"]{
+  body[data-theme="emerald-garden"]{
     --ivory:#EDE7D9; --paper:#F7F3E8; --ink:#1F2B22; --ink-soft:#48584B;
     --gold:#C9A24A; --gold-soft:#E2CD93; --pine:#12321F; --rose:#8E6A3D;
+    --photo-filter: saturate(1.12) contrast(1.04) hue-rotate(5deg) brightness(.99);
   }
-  body[data-theme="midnight-elegance"]{
+  body[data-theme="vintage-sepia"]{
+    --ivory:#EFE4CE; --paper:#F8F0DE; --ink:#3C2E1E; --ink-soft:#6B5A42;
+    --gold:#A87C3F; --gold-soft:#D3B47C; --pine:#5A4A30; --rose:#9C6B44;
+    --photo-filter: sepia(.35) contrast(1.05) saturate(.9) brightness(1.02);
+  }
+  body[data-theme="midnight-silver"]{
     --ivory:#171512; --paper:#211E1A; --ink:#F3ECDD; --ink-soft:#C7BBA4;
     --gold:#D4B45F; --gold-soft:#8A733B; --pine:#0E1310; --rose:#B98072;
     --line: rgba(243,236,221,0.14);
+    --photo-filter: grayscale(.25) contrast(1.12) brightness(.92) saturate(.75);
   }
   html{scroll-behavior:smooth; scroll-padding-top: env(safe-area-inset-top,0px);}
   html,body{height:100%;}
@@ -50,14 +64,6 @@
     font-weight:400;
     overflow:hidden;
     -webkit-font-smoothing:antialiased;
-  }
-  .page-florals{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-  .page-florals svg{ position:absolute; opacity:.16; }
-  .page-florals .pf-1{ width:320px; height:320px; bottom:-70px; left:-70px; }
-  .page-florals .pf-2{ width:280px; height:280px; top:-60px; right:-60px; transform:scaleX(-1); }
-  @media (max-width:520px){
-    .page-florals .pf-1{ width:200px; height:200px; bottom:-40px; left:-40px; }
-    .page-florals .pf-2{ width:180px; height:180px; top:-30px; right:-30px; }
   }
   #app{ position:relative; z-index:1; }
   h1,h2,h3,.serif{font-family:'Cormorant Garamond', serif; font-weight:500; letter-spacing:.01em;}
@@ -191,131 +197,46 @@
   #rsvp-success{display:none;}
 
   /* ---------- door ---------- */
-  #stage-door{background:var(--ivory);}
-  .door-wrap{ position:relative; width:min(420px,86vw); height:min(620px,74vh); perspective:1400px; }
-  .door-ground-shadow{
-    position:absolute; bottom:-16px; left:10%; right:10%; height:24px;
-    background: radial-gradient(ellipse at center, rgba(46,38,32,.3), transparent 72%);
-    filter: blur(3px); z-index:0;
+  /* ---------- door (real photo) ---------- */
+  #stage-door{
+    background:
+      radial-gradient(70% 55% at 50% 40%, rgba(255,255,255,.9), transparent 70%),
+      radial-gradient(100% 70% at 50% 100%, rgba(180,145,63,.14), transparent 70%),
+      var(--ivory);
   }
-  .door-keystone{
-    position:absolute; top:-4px; left:50%; transform:translateX(-50%);
-    width:22px; height:30px; z-index:4;
-    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
-    clip-path: polygon(50% 0%, 100% 32%, 76% 100%, 24% 100%, 0% 32%);
-    box-shadow: 0 3px 8px rgba(46,38,32,.28);
+  .door-photo-wrap{
+    position:relative;
+    width:min(640px,94vw);
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow: 0 26px 70px rgba(46,38,32,.32);
+    transition: transform 1.1s cubic-bezier(.4,0,.2,1), opacity .9s ease .15s;
   }
-  .door-frame{
-    position:absolute; inset:0; border-radius:210px 210px 6px 6px;
-    background: linear-gradient(180deg,#FDFBF4 0%, #F5EDD8 55%, #ECE0C1 100%);
-    box-shadow: var(--shadow), inset 0 0 0 1px var(--gold-soft), inset 0 0 36px rgba(180,145,63,.08);
-  }
-  .door-leaf{
-    position:absolute; top:0; bottom:0; width:50%;
-    background: linear-gradient(180deg,#FCF9F1 0%,#F3EAD3 60%,#EBDDBC 100%);
-    transition: transform 1.1s cubic-bezier(.65,0,.25,1);
-    box-shadow: inset 0 0 44px rgba(180,145,63,.1);
-  }
-  .door-leaf.left{ left:0; border-radius:210px 0 0 6px; transform-origin:left center; border-right:1px solid var(--gold-soft);}
-  .door-leaf.right{ right:0; border-radius:0 210px 6px 0; transform-origin:right center; border-left:1px solid var(--gold-soft);}
-  .door-leaf::before{
-    content:''; position:absolute; top:7%; bottom:7%; left:14%; right:14%;
-    border:1px solid var(--gold-soft); border-radius:150px 150px 4px 4px;
-  }
-  .leaf-panel{
-    position:absolute; top:15%; bottom:15%; left:26%; right:26%;
-    border:1px solid rgba(180,145,63,.45);
-    border-radius:90px 90px 3px 3px;
-    box-shadow: inset 0 0 14px rgba(180,145,63,.12);
-  }
-  .door-handle{
-    position:absolute; top:50%; width:7px; height:32px; background:var(--gold);
-    border-radius:4px; transform:translateY(-50%); z-index:2;
-    box-shadow: 0 1px 3px rgba(46,38,32,.35);
-  }
-  .door-handle::before{
-    content:''; position:absolute; top:50%; left:50%; width:16px; height:16px;
-    transform:translate(-50%,-50%); border-radius:50%;
-    background: radial-gradient(circle, var(--gold-soft), transparent 72%);
-    opacity:.7;
-  }
-  .door-leaf.left .door-handle{right:8%;}
-  .door-leaf.right .door-handle{left:8%;}
-  #stage-door.open .door-leaf.left{ transform: rotateY(-108deg); }
-  #stage-door.open .door-leaf.right{ transform: rotateY(108deg); }
+  .door-photo{ display:block; width:100%; height:auto; filter: var(--photo-filter, none); }
+  #stage-door.open .door-photo-wrap{ transform:scale(1.09); opacity:0; }
 
   .scratch-wrap{
-    position:absolute; top:50%; left:50%;
-    width:44%; aspect-ratio:1/1;
+    position:absolute; left:50%; top:76%;
+    width:27%; aspect-ratio:1/1;
     transform:translate(-50%,-50%);
     border-radius:50%; overflow:hidden;
-    box-shadow: inset 0 0 0 1px var(--gold-soft), 0 10px 28px rgba(46,38,32,.2);
+    box-shadow: 0 2px 10px rgba(46,38,32,.28), inset 0 0 0 1px rgba(180,145,63,.35);
     z-index:5;
   }
   .scratch-under{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     background: radial-gradient(circle at 50% 38%, #fff, var(--ivory));
-    font-family:'Cormorant Garamond',serif; color:var(--gold); font-size:2.6rem; text-align:center;
+    font-family:'Cormorant Garamond',serif; color:var(--gold); font-size:2rem; text-align:center;
   }
-  .scratch-under img{width:100%;height:100%;object-fit:cover;}
+  .scratch-under img{width:100%;height:100%;object-fit:cover; filter: var(--photo-filter, none);}
   #scratch-canvas{position:absolute; inset:0; touch-action:none; cursor:pointer; z-index:6;}
-
-  .door-caption{
-    position:absolute; bottom:6%; left:0; right:0; text-align:center;
-    font-size:.86rem; color:var(--ink-soft); letter-spacing:.02em;
-    transition:opacity .4s ease;
-  }
-  #stage-door.open .door-caption, #stage-door.revealed .door-caption{opacity:0;}
-  .couple-names-under{ position:absolute; top:-6%; left:0; right:0; text-align:center; }
-
-  /* -- door style: cathedral (narrower, taller pointed arch) -- */
-  .door-wrap[data-door="cathedral"]{ width:min(360px,80vw); }
-  .door-wrap[data-door="cathedral"] .door-frame{ border-radius:280px 280px 4px 4px; }
-  .door-wrap[data-door="cathedral"] .door-leaf.left{ border-radius:280px 0 0 4px; }
-  .door-wrap[data-door="cathedral"] .door-leaf.right{ border-radius:0 280px 4px 0; }
-  .door-wrap[data-door="cathedral"] .door-leaf::before{ border-radius:220px 220px 4px 4px; top:5%; }
-  .door-wrap[data-door="cathedral"] .leaf-panel{ border-radius:170px 170px 3px 3px; top:13%; }
-
-  /* -- door style: minimal (clean rectangular, thin outline) -- */
-  .door-wrap[data-door="minimal"] .door-frame{ border-radius:6px; box-shadow: var(--shadow), inset 0 0 0 1px var(--gold-soft); }
-  .door-wrap[data-door="minimal"] .door-leaf.left{ border-radius:6px 0 0 6px; }
-  .door-wrap[data-door="minimal"] .door-leaf.right{ border-radius:0 6px 6px 0; }
-  .door-wrap[data-door="minimal"] .door-leaf::before{ border-radius:2px; top:6%; bottom:6%; left:10%; right:10%; }
-  .door-wrap[data-door="minimal"] .leaf-panel{ border-radius:2px; top:13%; bottom:13%; left:20%; right:20%; }
-  .door-wrap[data-door="minimal"] .door-keystone{ display:none; }
-
-  /* -- door style: floral (arched + small corner accents) -- */
-  .door-wrap[data-door="floral"] .door-leaf::after{
-    content:''; position:absolute; width:14px; height:14px; border-radius:50%;
-    background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
-    opacity:.65;
-  }
-  .door-wrap[data-door="floral"] .door-leaf.left::after{ top:10%; right:22%; }
-  .door-wrap[data-door="floral"] .door-leaf.right::after{ top:10%; left:22%; }
-  .door-wrap[data-door="floral"] .door-leaf.left::before{ box-shadow: -4px 0 0 -3px var(--gold-soft); }
-
-  /* -- botanical accents around the door (all styles) -- */
-  .floral-accent{ position:absolute; width:78px; height:78px; pointer-events:none; z-index:2; opacity:.92; }
-  .floral-accent.top-left{ top:-16px; left:-14px; }
-  .floral-accent.top-right{ top:-16px; right:-14px; transform:scaleX(-1); }
-  .floral-accent.bottom-left{ bottom:-10px; left:-10px; width:52px; height:52px; }
-  .floral-accent.bottom-right{ bottom:-10px; right:-10px; width:52px; height:52px; transform:scaleX(-1); }
-  @media (max-width:420px){
-    .floral-accent{ width:56px; height:56px; }
-    .floral-accent.top-left{ top:-10px; left:-8px; }
-    .floral-accent.top-right{ top:-10px; right:-8px; }
-  }
-  .fl-leaf{ fill: var(--pine); opacity:.5; }
-  .fl-bloom use{ fill: var(--rose); opacity:.88; }
-  .fl-bloom.fl-bloom-alt use{ fill: var(--gold-soft); opacity:.92; }
-  .fl-bloom .fl-center{ fill: var(--gold); opacity:1; }
 
   @media (max-width:480px){
     .panel{padding-top:30px;}
     .sched-item{grid-template-columns:64px 1fr;}
   }
   @media (prefers-reduced-motion: reduce){
-    .door-leaf, .stage{transition:none !important;}
+    .door-photo-wrap, .stage{transition:none !important;}
   }
 
   .skip-link{
@@ -327,133 +248,19 @@
 </head>
 <body>
 
-<div class="page-florals" aria-hidden="true">
-  <svg class="pf-1" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <path id="petal1" d="M0,0 C6,-10 7,-22 0,-30 C-7,-22 -6,-10 0,0 Z"/>
-    </defs>
-    <path class="fl-leaf" d="M8,62 Q24,46 14,24 Q36,38 30,62 Q19,70 8,62 Z"/>
-    <path class="fl-leaf" d="M26,70 Q42,55 46,33 Q57,48 49,70 Q37,77 26,70 Z"/>
-    <g class="fl-bloom" transform="translate(46,30)">
-      <use href="#petal1" transform="rotate(0)"/>
-      <use href="#petal1" transform="rotate(60)"/>
-      <use href="#petal1" transform="rotate(120)"/>
-      <use href="#petal1" transform="rotate(180)"/>
-      <use href="#petal1" transform="rotate(240)"/>
-      <use href="#petal1" transform="rotate(300)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-    <g class="fl-bloom fl-bloom-alt" transform="translate(20,20) scale(0.6)">
-      <use href="#petal1" transform="rotate(20)"/>
-      <use href="#petal1" transform="rotate(80)"/>
-      <use href="#petal1" transform="rotate(140)"/>
-      <use href="#petal1" transform="rotate(200)"/>
-      <use href="#petal1" transform="rotate(260)"/>
-      <use href="#petal1" transform="rotate(320)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-  </svg>
-  <svg class="pf-2" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <path id="petal2" d="M0,0 C6,-10 7,-22 0,-30 C-7,-22 -6,-10 0,0 Z"/>
-    </defs>
-    <path class="fl-leaf" d="M8,62 Q24,46 14,24 Q36,38 30,62 Q19,70 8,62 Z"/>
-    <path class="fl-leaf" d="M26,70 Q42,55 46,33 Q57,48 49,70 Q37,77 26,70 Z"/>
-    <g class="fl-bloom" transform="translate(46,30)">
-      <use href="#petal2" transform="rotate(0)"/>
-      <use href="#petal2" transform="rotate(60)"/>
-      <use href="#petal2" transform="rotate(120)"/>
-      <use href="#petal2" transform="rotate(180)"/>
-      <use href="#petal2" transform="rotate(240)"/>
-      <use href="#petal2" transform="rotate(300)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-    <g class="fl-bloom fl-bloom-alt" transform="translate(20,20) scale(0.6)">
-      <use href="#petal2" transform="rotate(20)"/>
-      <use href="#petal2" transform="rotate(80)"/>
-      <use href="#petal2" transform="rotate(140)"/>
-      <use href="#petal2" transform="rotate(200)"/>
-      <use href="#petal2" transform="rotate(260)"/>
-      <use href="#petal2" transform="rotate(320)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-  </svg>
-</div>
-
 <div id="app">
 
-  <!-- CHAPTER 0 — DOOR / OPENING -->
+  <!-- CHAPTER 0 — DOOR / OPENING (real photo backdrop) -->
   <section class="stage active" id="stage-door" data-stage="door">
-    <div class="door-wrap" id="door-el">
-      <div class="couple-names-under">
-        <p class="eyebrow" id="d-eyebrow"></p>
-      </div>
-      <div class="door-ground-shadow"></div>
-      <div class="door-frame"></div>
-      <div class="door-keystone"></div>
+    <div class="door-photo-wrap" id="door-el">
+      <img class="door-photo" src="photos/door-bg.jpg" alt="">
       <div class="scratch-wrap" id="scratch-wrap">
         <div class="scratch-under" id="scratch-under"></div>
         <canvas id="scratch-canvas"></canvas>
       </div>
-      <div class="door-leaf left"><div class="leaf-panel"></div><div class="door-handle"></div></div>
-      <div class="door-leaf right"><div class="leaf-panel"></div><div class="door-handle"></div></div>
-
-      <svg class="floral-accent top-left" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <path id="petal3" d="M0,0 C6,-10 7,-22 0,-30 C-7,-22 -6,-10 0,0 Z"/>
-    </defs>
-    <path class="fl-leaf" d="M8,62 Q24,46 14,24 Q36,38 30,62 Q19,70 8,62 Z"/>
-    <path class="fl-leaf" d="M26,70 Q42,55 46,33 Q57,48 49,70 Q37,77 26,70 Z"/>
-    <g class="fl-bloom" transform="translate(46,30)">
-      <use href="#petal3" transform="rotate(0)"/>
-      <use href="#petal3" transform="rotate(60)"/>
-      <use href="#petal3" transform="rotate(120)"/>
-      <use href="#petal3" transform="rotate(180)"/>
-      <use href="#petal3" transform="rotate(240)"/>
-      <use href="#petal3" transform="rotate(300)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-    <g class="fl-bloom fl-bloom-alt" transform="translate(20,20) scale(0.6)">
-      <use href="#petal3" transform="rotate(20)"/>
-      <use href="#petal3" transform="rotate(80)"/>
-      <use href="#petal3" transform="rotate(140)"/>
-      <use href="#petal3" transform="rotate(200)"/>
-      <use href="#petal3" transform="rotate(260)"/>
-      <use href="#petal3" transform="rotate(320)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-  </svg>
-      <svg class="floral-accent top-right" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <path id="petal4" d="M0,0 C6,-10 7,-22 0,-30 C-7,-22 -6,-10 0,0 Z"/>
-    </defs>
-    <path class="fl-leaf" d="M8,62 Q24,46 14,24 Q36,38 30,62 Q19,70 8,62 Z"/>
-    <path class="fl-leaf" d="M26,70 Q42,55 46,33 Q57,48 49,70 Q37,77 26,70 Z"/>
-    <g class="fl-bloom" transform="translate(46,30)">
-      <use href="#petal4" transform="rotate(0)"/>
-      <use href="#petal4" transform="rotate(60)"/>
-      <use href="#petal4" transform="rotate(120)"/>
-      <use href="#petal4" transform="rotate(180)"/>
-      <use href="#petal4" transform="rotate(240)"/>
-      <use href="#petal4" transform="rotate(300)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-    <g class="fl-bloom fl-bloom-alt" transform="translate(20,20) scale(0.6)">
-      <use href="#petal4" transform="rotate(20)"/>
-      <use href="#petal4" transform="rotate(80)"/>
-      <use href="#petal4" transform="rotate(140)"/>
-      <use href="#petal4" transform="rotate(200)"/>
-      <use href="#petal4" transform="rotate(260)"/>
-      <use href="#petal4" transform="rotate(320)"/>
-      <circle class="fl-center" cx="0" cy="0" r="5"/>
-    </g>
-  </svg>
-
-      <p class="door-caption" id="door-caption">Scratch the center to begin</p>
     </div>
   </section>
 
-  <!-- CHAPTER 1 — WELCOME -->
   <section class="stage" id="stage-welcome" data-stage="welcome">
     <div class="panel">
       <p class="eyebrow" id="w-eyebrow"></p>
@@ -569,12 +376,9 @@
   /* ---------------- populate content from config ---------------- */
   function populate(){
     document.body.setAttribute('data-theme', CFG.theme || 'classic-ivory');
-    $('#door-el').setAttribute('data-door', CFG.doorStyle || 'arched');
+    $('.door-photo').src = CFG.doorPhoto || 'photos/door-bg.jpg';
 
     var names = (CFG.partner1||'Jhau') + ' <span class="amp">&amp;</span> ' + (CFG.partner2||'Sheila');
-
-    $('#d-eyebrow').textContent = (CFG.partner1||'') + ' & ' + (CFG.partner2||'');
-    $('#door-caption').textContent = 'Scratch the center to begin';
 
     $('#w-eyebrow').textContent = CFG.familiesLine || '';
     $('#w-names').innerHTML = names;
@@ -658,19 +462,12 @@
     });
   }
 
-  function closeDoorThenGo(nextName){
-    door.classList.remove('open');
-    goTo('door');
-    // brief pause with doors visually shut, then switch scene
-    setTimeout(function(){ goTo(nextName); }, 550);
-  }
-
   document.addEventListener('click', function(e){
     if(e.target.matches('[data-next]')){
       var order = ['welcome','ceremony','reception','rsvp'];
       var current = order.indexOf(document.querySelector('.stage.active').dataset.stage);
       var next = order[current+1];
-      if(next){ closeDoorThenGo(next); }
+      if(next){ goTo(next); }
     }
   });
 
@@ -688,43 +485,34 @@
 
   function drawFoil(){
     var w = canvas.width, h = canvas.height;
-    var g = ctx.createLinearGradient(0,0,w,h);
-    g.addColorStop(0, '#EFDFB8');
-    g.addColorStop(.45, '#DEC17F');
-    g.addColorStop(.55, '#E9CE93');
-    g.addColorStop(1, '#CBA85F');
+    var g = ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0, '#F7F0E1');
+    g.addColorStop(1, '#EDE1C7');
     ctx.fillStyle = g;
     ctx.fillRect(0,0,w,h);
 
-    // fine metallic grain (random speckle), gives a real foil-card look
-    for(var n=0; n<Math.round(w*h/9); n++){
+    // very light grain so it doesn't look like a flat sticker
+    for(var n=0; n<Math.round(w*h/16); n++){
       var gx = Math.random()*w, gy = Math.random()*h;
-      var shade = Math.random();
-      ctx.fillStyle = shade > .5 ? 'rgba(255,255,255,'+(Math.random()*.10)+')' : 'rgba(90,66,30,'+(Math.random()*.08)+')';
+      ctx.fillStyle = 'rgba(120,90,40,'+(Math.random()*.05)+')';
       ctx.fillRect(gx, gy, 1, 1);
     }
 
-    // soft sheen sweep
-    var sheen = ctx.createLinearGradient(0,0,w*.6,h*.6);
-    sheen.addColorStop(0,'rgba(255,255,255,.22)');
-    sheen.addColorStop(.5,'rgba(255,255,255,0)');
-    ctx.fillStyle = sheen;
+    // soft inner vignette so the circle reads as part of the photo, not a sticker on top
+    var vg = ctx.createRadialGradient(w/2,h/2,h*0.25,w/2,h/2,h*0.52);
+    vg.addColorStop(0,'rgba(0,0,0,0)');
+    vg.addColorStop(1,'rgba(80,58,26,.22)');
+    ctx.fillStyle = vg;
     ctx.fillRect(0,0,w,h);
 
-    // thin ornamental border
-    ctx.strokeStyle = 'rgba(120,90,40,.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(9,9,w-18,h-18);
-
-    // small centered mark, understated
-    ctx.fillStyle = 'rgba(80,58,26,.6)';
+    // small hand + label, matching the photo's own styling
+    ctx.fillStyle = 'rgba(90,66,30,.65)';
     ctx.textAlign = 'center';
-    var initials = ((CFG.partner1||'J')[0] + ' & ' + (CFG.partner2||'S')[0]);
-    ctx.font = '500 '+Math.round(h*0.1)+'px "Cormorant Garamond", serif';
-    ctx.fillText(initials, w/2, h*0.5);
-    ctx.font = '400 '+Math.max(10,Math.round(h*0.032))+'px "Jost", sans-serif';
-    ctx.fillStyle = 'rgba(80,58,26,.5)';
-    ctx.fillText('scratch to reveal', w/2, h*0.62);
+    ctx.font = '400 '+Math.round(h*0.16)+'px sans-serif';
+    ctx.fillText('☝', w/2, h*0.42);
+    ctx.font = '500 '+Math.max(9,Math.round(h*0.072))+'px "Cormorant Garamond", serif';
+    ctx.fillStyle = 'rgba(90,66,30,.7)';
+    ctx.fillText('SCRATCH TO REVEAL', w/2, h*0.62);
   }
 
   function sizeCanvas(force){
@@ -769,16 +557,11 @@
     ctx.stroke();
     lastPt = {x:x,y:y};
   }
-  var hintShown = {half:false};
   function checkReveal(){
     if(revealed) return;
     if(!revealThreshold){
       // enough total scratch distance to reasonably cover the panel a few times over
       revealThreshold = (canvas.width + canvas.height) * 2.6;
-    }
-    if(!hintShown.half && scratchedLength > revealThreshold*0.4){
-      hintShown.half = true;
-      $('#door-caption').textContent = 'Almost there…';
     }
     if(scratchedLength > revealThreshold){
       triggerReveal();
@@ -797,13 +580,10 @@
 
   function advanceThroughDoor(){
     try{
-      door.classList.add('revealed');
-      setTimeout(function(){
-        door.classList.add('open');
-      }, 450);
+      door.classList.add('open');
       setTimeout(function(){
         goTo('welcome');
-      }, 1550);
+      }, 1150);
     }catch(err){
       // safety net: never leave the guest stranded on the door
       goTo('welcome');

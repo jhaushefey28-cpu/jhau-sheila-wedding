@@ -28,24 +28,24 @@ window.WEDDING = {
 
   hashtag: "",                             // e.g. "#JhauAndSheila" (leave "" to hide)
 
-  /* ---- 2b. THEME --------------------------------------------------------
-     Pick one by name. Each gives the whole site a different color mood;
-     nothing else needs to change.
-       "classic-ivory"     - ivory & champagne gold, warm charcoal text (default)
-       "romantic-blush"    - blush pink & rose gold, deep plum text
-       "emerald-gold"      - deep emerald green & gold, cream text
-       "midnight-elegance" - near-black & gold, ivory text (formal evening look)
+  /* ---- 2b. THEME / "EXPO" ------------------------------------------------
+     Pick one by name. Each shifts the whole site's color mood AND gives the
+     door photo and your couple photo a matching color-grade (like a camera
+     exposure/filter preset) — six to choose from:
+       "classic-ivory"     - natural color, ivory & champagne gold (default)
+       "golden-hour"       - warm, golden late-afternoon glow
+       "romantic-blush"    - soft blush pink & rose gold
+       "emerald-garden"    - deep emerald green & gold, garden-lush
+       "vintage-sepia"     - classic warm sepia, old-film feel
+       "midnight-silver"   - near-black & gold, moody formal-evening look
   --------------------------------------------------------------------- */
   theme: "classic-ivory",
 
-  /* ---- 2c. DOOR STYLE ----------------------------------------------------
-     Pick one by name. Changes only the shape/decoration of the opening doors.
-       "arched"    - tall rounded arch (default)
-       "cathedral" - narrower, taller pointed gothic arch
-       "minimal"   - clean rectangular doors, thin gold outline
-       "floral"    - arched doors with a small floral accent at each corner
+  /* ---- 2c. DOOR PHOTO ----------------------------------------------------
+     The opening "door" screen is your own photo, in the photos folder.
+     Swap the file any time — same filename, or update the path below.
   --------------------------------------------------------------------- */
-  doorStyle: "arched",
+  doorPhoto: "photos/door-bg.jpg",
 
   /* ---- 3. WELCOME ------------------------------------------------------- */
   welcomeTitle: "With joyful hearts",
