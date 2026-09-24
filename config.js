@@ -152,5 +152,23 @@ window.WEDDING = {
     email: "",                                  // used when mode is "email"
     supabase: { url: "", anonKey: "", table: "rsvps" },
     webhookUrl: ""                              // used when mode is "webhook"
-  }
+  },
+
+  /* ---- 10. GUEST LIST (for the personalized Ninong/Ninang question) -----
+     List every invited guest here with their role. When someone types a
+     name on the RSVP screen that matches (small typos/missing middle
+     names are OK — matching is loose), the question changes to fit them,
+     e.g. "Juan, will you be our Ninong?" with matching Yes/No wording.
+     Anyone NOT on this list still gets the normal RSVP question — this
+     list is only for the personalized touch, it doesn't block replies.
+     Roles you can use: "ninong", "ninang", "principal-sponsor",
+     "secondary-sponsor", "entourage", "family", "guest"
+  --------------------------------------------------------------------- */
+  guestList: [
+    { name: "Juan Dela Cruz", role: "ninong" },
+    { name: "Maria Santos", role: "ninang" }
+    // add one line per guest, e.g.:
+    // { name: "Pedro Reyes", role: "principal-sponsor" },
+    // { name: "Ana Lopez", role: "entourage" },
+  ]
 };

@@ -321,16 +321,20 @@
       <p class="lede" style="margin:6px auto 0;" id="rv-lede"></p>
 
       <form id="rsvp-form">
-        <div class="attend-toggle" role="group" aria-label="Attendance">
-          <button type="button" data-attend="yes" id="btn-yes">I'd be honored</button>
-          <button type="button" data-attend="no" id="btn-no">With regret, I can't attend</button>
+        <div class="field">
+          <label for="f-name">Your full name</label>
+          <input type="text" id="f-name" required autocomplete="name">
+        </div>
+
+        <p class="lede" id="rv-honor" style="margin:16px auto 0; display:none; font-style:italic;"></p>
+        <p class="lede" id="rv-question" style="margin:10px auto 18px; display:none;"></p>
+
+        <div class="attend-toggle" role="group" aria-label="Attendance" id="attend-toggle" style="display:none;">
+          <button type="button" data-attend="yes" id="btn-yes"></button>
+          <button type="button" data-attend="no" id="btn-no"></button>
         </div>
 
         <div id="rsvp-extra" style="display:none;">
-          <div class="field">
-            <label for="f-name">Full name</label>
-            <input type="text" id="f-name" required>
-          </div>
           <div class="field" id="f-guests-wrap">
             <label for="f-guests">Total guests attending (including you)</label>
             <input type="number" id="f-guests" min="1" value="1">
@@ -452,6 +456,10 @@
       wPhoto.textContent = initials;
     }
   }
+
+  populate();
+
+  try{
 
   /* ---------------- door / chapter transitions ---------------- */
   var door = $('#stage-door');
@@ -611,6 +619,63 @@
   canvas.addEventListener('touchend', end);
 
   /* ---------------- RSVP form ---------------- */
+  var ROLE_TEXT = {
+    ninong: { honor: "You've been chosen as our Ninong for this special day." },
+    ninang: { honor: "You've been chosen as our Ninang for this special day." },
+    'principal-sponsor': { honor: "You've been chosen as one of our Principal Sponsors." },
+    'secondary-sponsor': { honor: "You've been chosen as one of our Secondary Sponsors." },
+    entourage: { honor: "You're part of our wedding entourage — thank you for standing with us." },
+    family: { honor: "" },
+    guest: { honor: "" }
+  };
+  var ASK = 'Will you be able to join us?';
+  var YES_LABEL = "Yes, I'll be there";
+  var NO_LABEL = "I'm sorry, I can't make it";
+
+  function normalizeName(s){ return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+  function findGuest(input){
+    var n = normalizeName(input);
+    if(!n || n.length < 2) return null;
+    var list = CFG.guestList || [];
+    for(var i=0;i<list.length;i++){
+      if(normalizeName(list[i].name) === n) return list[i];
+    }
+    for(var i=0;i<list.length;i++){
+      var ln = normalizeName(list[i].name);
+      if(ln.indexOf(n) !== -1 || n.indexOf(ln) !== -1) return list[i];
+    }
+    return null;
+  }
+
+  function updateRsvpQuestion(){
+    var nameVal = $('#f-name').value.trim();
+    var honorEl = $('#rv-honor'), qEl = $('#rv-question'), toggleEl = $('#attend-toggle');
+    if(nameVal.length < 2){
+      honorEl.style.display='none';
+      qEl.style.display='none';
+      toggleEl.style.display='none';
+      return;
+    }
+    var guest = findGuest(nameVal);
+    var role = guest ? guest.role : 'guest';
+    var rt = ROLE_TEXT[role] || ROLE_TEXT.guest;
+    var firstName = nameVal.split(' ')[0];
+
+    if(rt.honor){
+      honorEl.textContent = firstName + ' — ' + rt.honor;
+      honorEl.style.display='block';
+    } else {
+      honorEl.style.display='none';
+    }
+
+    qEl.textContent = guest ? (firstName + ', ' + ASK.charAt(0).toLowerCase() + ASK.slice(1)) : ASK;
+    qEl.style.display='block';
+    toggleEl.style.display='flex';
+    $('#btn-yes').textContent = YES_LABEL;
+    $('#btn-no').textContent = NO_LABEL;
+  }
+  $('#f-name').addEventListener('input', updateRsvpQuestion);
+
   var attend = null;
   $('#btn-yes').addEventListener('click', function(){ attend='yes'; setAttend(); });
   $('#btn-no').addEventListener('click', function(){ attend='no'; setAttend(); });
@@ -673,7 +738,10 @@
     $('#rsvp-success').style.display='block';
   }
 
-  populate();
+  }catch(setupErr){
+    // even if the interactive bits fail to wire up, the content above has
+    // already been populated and the "Skip intro" link still works.
+  }
 })();
 </script>
 </body>
