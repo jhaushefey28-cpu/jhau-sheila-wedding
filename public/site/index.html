@@ -406,6 +406,7 @@
 
     $('#s-title').textContent = CFG.scheduleTitle || 'The Day';
     var schedWrap = $('#sched-list');
+    schedWrap.innerHTML = '';
     (CFG.schedule||[]).forEach(function(item){
       var el = document.createElement('div');
       el.className='sched-item';
@@ -417,6 +418,7 @@
     $('#a-text').textContent = CFG.attireText || '';
     $('#a-note').textContent = CFG.attireNote || '';
     var swWrap = $('#a-swatches');
+    swWrap.innerHTML = '';
     (CFG.palette||[]).forEach(function(c){
       var el = document.createElement('div'); el.className='swatch';
       el.innerHTML = '<div class="swatch-dot" style="background:'+c.hex+'"></div>'+c.name;
@@ -425,6 +427,7 @@
 
     $('#f-title').textContent = CFG.faqTitle || 'Good to Know';
     var faqWrap = $('#faq-list');
+    faqWrap.innerHTML = '';
     (CFG.faq||[]).forEach(function(item){
       var el = document.createElement('div'); el.className='faq-item';
       el.innerHTML = '<p class="faq-q">'+item.q+'</p><p class="faq-a">'+item.a+'</p>';
@@ -436,12 +439,14 @@
     var deadlineTxt = rsvp.deadline ? ' by ' + fmt(rsvp.deadline, {month:'long', day:'numeric'}) : '';
     $('#rv-lede').textContent = (rsvp.lede || '') + deadlineTxt + '.';
 
+    var sel = $('#f-meal');
+    sel.innerHTML = '';
+    $('#f-meal-wrap').style.display='none';
     if((rsvp.mealOptions||[]).length){
-      var sel = $('#f-meal');
       rsvp.mealOptions.forEach(function(m){ var o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
       $('#f-meal-wrap').style.display='block';
     }
-    if(rsvp.askSongRequest){ $('#f-song-wrap').style.display='block'; }
+    $('#f-song-wrap').style.display = rsvp.askSongRequest ? 'block' : 'none';
     if(rsvp.maxGuests){ $('#f-guests').max = rsvp.maxGuests; }
 
     var photo = CFG.heroPhoto;
@@ -458,6 +463,23 @@
   }
 
   populate();
+
+  /* ---- load live details from the database, if any edits were saved ----
+     Falls back silently to the defaults above (from config.js) if this
+     fails, so the site never breaks because of a connection hiccup. */
+  (function loadLiveConfig(){
+    var sb = (CFG.rsvp && CFG.rsvp.supabase) || {};
+    if(!sb.url || !sb.anonKey) return;
+    fetch(sb.url+'/rest/v1/wedding_config?id=eq.default&select=data', {
+      headers:{ 'apikey': sb.anonKey, 'Authorization': 'Bearer '+sb.anonKey }
+    }).then(function(res){ return res.ok ? res.json() : null; })
+      .then(function(rows){
+        if(rows && rows[0] && rows[0].data){
+          Object.assign(CFG, rows[0].data);
+          populate();
+        }
+      }).catch(function(){ /* keep showing the defaults already rendered */ });
+  })();
 
   try{
 
