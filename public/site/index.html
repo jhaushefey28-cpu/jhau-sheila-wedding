@@ -203,15 +203,17 @@
     justify-content:center; align-items:center;
   }
   .door-photo-wrap{
-    position:absolute; inset:0;
-    width:100%; height:100%;
+    position:relative;
+    width:min(100vw, calc(100dvh * 1100 / 582));
+    max-height:100dvh;
+    aspect-ratio:1100/582;
     overflow:hidden;
     transition: transform 1.1s cubic-bezier(.4,0,.2,1), opacity .9s ease .15s;
   }
   .door-photo{
     position:absolute; inset:0;
     display:block; width:100%; height:100%;
-    object-fit:cover; object-position:center center;
+    object-fit:contain; object-position:center center;
     filter: var(--photo-filter, none);
   }
   #stage-door.open .door-photo-wrap{ transform:scale(1.09); opacity:0; }
