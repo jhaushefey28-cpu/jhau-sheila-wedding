@@ -68,6 +68,8 @@ type WeddingConfig = {
   faqLede: string;
   faq: FaqItem[];
   contact: { name: string; phone: string; email: string };
+  doorPhoto: string;
+  heroPhoto: string;
   rsvp: {
     title: string;
     lede: string;
@@ -92,6 +94,7 @@ const EMPTY_CONFIG: WeddingConfig = {
   attireTitle: '', attireLede: '', attireText: '', attireNote: '', palette: [],
   faqTitle: '', faqLede: '', faq: [],
   contact: { name: '', phone: '', email: '' },
+  doorPhoto: '', heroPhoto: '',
   rsvp: { title: '', lede: '', deadline: '', maxGuests: 4, mealOptions: [], askSongRequest: true },
   guestList: [],
 };
@@ -333,10 +336,41 @@ function DetailsTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedAt, setSavedAt] = useState<string>('');
+  const [uploading, setUploading] = useState<'doorPhoto' | 'heroPhoto' | ''>('');
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     load();
   }, []);
+
+  async function uploadPhoto(file: File, key: 'doorPhoto' | 'heroPhoto') {
+    if (file.size > 8 * 1024 * 1024) {
+      setUploadError('Please choose a photo under 8MB.');
+      return;
+    }
+    setUploading(key);
+    setUploadError('');
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${key}-${Date.now()}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-photos/${path}`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': file.type || 'image/jpeg',
+        },
+        body: file,
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-photos/${path}`;
+      setCfg((c) => ({ ...c, [key]: publicUrl }));
+    } catch {
+      setUploadError('Upload failed. Please try again.');
+    } finally {
+      setUploading('');
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -397,6 +431,27 @@ function DetailsTab() {
         {savedAt && <span style={styles.statLabel}>Saved at {savedAt} — live on the site now.</span>}
         {error && <span style={styles.errorText}>{error}</span>}
       </div>
+
+      <Section title="Photos">
+        <p style={styles.statLabel}>
+          These photos are stored online, so anyone can use this page to swap theirs in — no file uploads through code needed.
+        </p>
+        {uploadError && <p style={styles.errorText}>{uploadError}</p>}
+        <Row>
+          <PhotoUpload
+            label="Door photo (opening screen)"
+            value={cfg.doorPhoto}
+            uploading={uploading === 'doorPhoto'}
+            onPick={(f) => uploadPhoto(f, 'doorPhoto')}
+          />
+          <PhotoUpload
+            label="Couple photo (revealed by the scratch)"
+            value={cfg.heroPhoto}
+            uploading={uploading === 'heroPhoto'}
+            onPick={(f) => uploadPhoto(f, 'heroPhoto')}
+          />
+        </Row>
+      </Section>
 
       <Section title="The couple">
         <Row>
@@ -539,6 +594,47 @@ function DetailsTab() {
   );
 }
 
+function PhotoUpload({
+  label,
+  value,
+  uploading,
+  onPick,
+}: {
+  label: string;
+  value: string;
+  uploading: boolean;
+  onPick: (file: File) => void;
+}) {
+  const inputId = 'photo-' + label.replace(/\W+/g, '-');
+  return (
+    <div style={{ flex: '1 1 220px' }}>
+      <span style={styles.fieldLabel}>{label}</span>
+      <div style={styles.photoBox}>
+        {value ? (
+          <img src={value} alt={label} style={styles.photoPreview} />
+        ) : (
+          <div style={styles.photoPlaceholder}>No photo yet</div>
+        )}
+        <label htmlFor={inputId} style={styles.secondaryBtn}>
+          {uploading ? 'Uploading…' : value ? 'Change photo' : 'Upload photo'}
+        </label>
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          disabled={uploading}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onPick(f);
+            e.target.value = '';
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function VenueBox({ label, venue, onChange }: { label: string; venue: Venue; onChange: (v: Venue) => void }) {
   return (
     <div style={styles.venueBox}>
@@ -640,4 +736,7 @@ const styles: Record<string, React.CSSProperties> = {
   removeBtn: { background: 'none', border: '1px solid #e2cfcf', color: '#a23b3b', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' },
   addBtn: { background: 'none', border: '1px dashed #c9b893', color: '#8a7a5c', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer', marginTop: 4 },
   venueBox: { background: '#faf7f0', border: '1px solid #f2ebdd', borderRadius: 8, padding: 16, marginBottom: 14 },
+  photoBox: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start', marginTop: 6 },
+  photoPreview: { width: '100%', maxWidth: 240, aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8, border: '1px solid #ede4d2' },
+  photoPlaceholder: { width: '100%', maxWidth: 240, aspectRatio: '4/3', borderRadius: 8, border: '1px dashed #ddd3c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89a82', fontSize: 13 },
 };
