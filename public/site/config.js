@@ -147,10 +147,14 @@ window.WEDDING = {
     //   "email"    - easiest. Opens the guest's email app with the reply ready.
     //   "supabase" - replies saved in your own Supabase table (see SETUP.md).
     //   "webhook"  - replies sent to a Google Sheet (see SETUP.md).
-    mode: "email",
+    mode: "supabase",
 
     email: "",                                  // used when mode is "email"
-    supabase: { url: "", anonKey: "", table: "rsvps" },
+    supabase: {
+      url: "https://uizyibmeltqzwyuyfpvv.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpenlpYm1lbHRxend5dXlmcHZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzMzM4NzcsImV4cCI6MjEwNjkwOTg3N30.UQzfwQOIdkjRWu--2E__vjPgt3zL7_LxZGX7W777xf8",
+      table: "rsvps"
+    },
     webhookUrl: ""                              // used when mode is "webhook"
   },
 

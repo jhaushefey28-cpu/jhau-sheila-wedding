@@ -658,6 +658,7 @@
     }
     var guest = findGuest(nameVal);
     var role = guest ? guest.role : 'guest';
+    currentGuestRole = role;
     var rt = ROLE_TEXT[role] || ROLE_TEXT.guest;
     var firstName = nameVal.split(' ')[0];
 
@@ -677,6 +678,7 @@
   $('#f-name').addEventListener('input', updateRsvpQuestion);
 
   var attend = null;
+  var currentGuestRole = '';
   $('#btn-yes').addEventListener('click', function(){ attend='yes'; setAttend(); });
   $('#btn-no').addEventListener('click', function(){ attend='no'; setAttend(); });
   function setAttend(){
@@ -697,6 +699,7 @@
 
     var payload = {
       name: name,
+      role: currentGuestRole || 'guest',
       attending: attend,
       guests: attend==='yes' ? ($('#f-guests').value||1) : 0,
       meal: $('#f-meal') && $('#f-meal').value || '',
