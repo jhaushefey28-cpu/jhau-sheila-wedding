@@ -32,12 +32,12 @@ window.WEDDING = {
      Pick one by name. Each shifts the whole site's color mood AND gives the
      door photo and your couple photo a matching color-grade (like a camera
      exposure/filter preset) — six to choose from:
-       "classic-ivory"     - natural color, ivory & champagne gold (default)
-       "golden-hour"       - warm, golden late-afternoon glow
-       "romantic-blush"    - soft blush pink & rose gold
-       "emerald-garden"    - deep emerald green & gold, garden-lush
-       "vintage-sepia"     - classic warm sepia, old-film feel
-       "midnight-silver"   - near-black & gold, moody formal-evening look
+       "classic-ivory"     - light, warm ivory & gold (default)
+       "sage-garden"       - soft sage green, fresh and botanical
+       "dusty-rose"        - blush pink & rose gold, romantic
+       "emerald-night"     - deep dark green & gold, dramatic and formal
+       "champagne-taupe"   - warm modern neutral, understated elegance
+       "midnight-gold"     - near-black & gold, formal black-tie evening
   --------------------------------------------------------------------- */
   theme: "classic-ivory",
 

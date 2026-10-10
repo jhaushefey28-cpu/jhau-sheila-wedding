@@ -17,12 +17,12 @@ const SUPABASE_ANON_KEY =
 const ADMIN_PASSWORD = 'JhauSheila2026';
 
 const THEMES = [
-  { value: 'classic-ivory', label: 'Classic Ivory' },
-  { value: 'golden-hour', label: 'Golden Hour' },
-  { value: 'romantic-blush', label: 'Romantic Blush' },
-  { value: 'emerald-garden', label: 'Emerald Garden' },
-  { value: 'vintage-sepia', label: 'Vintage Sepia' },
-  { value: 'midnight-silver', label: 'Midnight Silver' },
+  { value: 'classic-ivory', label: 'Classic Ivory — light, warm gold' },
+  { value: 'sage-garden', label: 'Sage Garden — soft green, botanical' },
+  { value: 'dusty-rose', label: 'Dusty Rose — blush pink, romantic' },
+  { value: 'emerald-night', label: 'Emerald Night — deep green, dramatic' },
+  { value: 'champagne-taupe', label: 'Champagne Taupe — modern neutral' },
+  { value: 'midnight-gold', label: 'Midnight Gold — black-tie formal' },
 ];
 
 const ROLE_OPTIONS = [
