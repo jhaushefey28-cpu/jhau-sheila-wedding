@@ -504,7 +504,14 @@
     }).then(function(res){ return res.ok ? res.json() : null; })
       .then(function(rows){
         if(rows && rows[0] && rows[0].data){
-          Object.assign(CFG, rows[0].data);
+          var live = rows[0].data;
+          // Merge nested settings instead of replacing them outright, so
+          // admin-edited text (RSVP title/lede/deadline, contact info)
+          // doesn't wipe out connection settings (mode/supabase/email)
+          // that only live in config.js and aren't edited from /admin.
+          if(live.rsvp){ live.rsvp = Object.assign({}, CFG.rsvp, live.rsvp); }
+          if(live.contact){ live.contact = Object.assign({}, CFG.contact, live.contact); }
+          Object.assign(CFG, live);
           populate();
           if(typeof sizeCanvas === 'function'){ sizeCanvas(true); }
         }
