@@ -207,13 +207,27 @@
   #stage-door{
     background: var(--ivory);
     justify-content:center; align-items:center;
+    overflow:hidden;
   }
+  /* A blurred, full-bleed fill of the same photo behind the real one, so
+     a landscape door photo still reads as "portrait" and fills the whole
+     phone screen — without cropping or stretching the actual photo. */
+  .door-backdrop{
+    position:absolute; inset:-5%;
+    width:110%; height:110%;
+    object-fit:cover; object-position:center center;
+    filter: blur(44px) brightness(.72) saturate(1.15) var(--photo-filter, none);
+    transform:scale(1.15);
+    transition: opacity .9s ease .15s;
+  }
+  #stage-door.open .door-backdrop{ opacity:0; }
   .door-photo-wrap{
     position:relative;
     width:min(100vw, calc(100dvh * 1100 / 582));
     max-height:100dvh;
     aspect-ratio:1100/582;
     overflow:hidden;
+    box-shadow: 0 30px 90px rgba(0,0,0,.4);
     transition: transform 1.1s cubic-bezier(.4,0,.2,1), opacity .9s ease .15s;
   }
   .door-photo{
@@ -265,6 +279,7 @@
 
   <!-- CHAPTER 0 — DOOR / OPENING (real photo backdrop) -->
   <section class="stage active" id="stage-door" data-stage="door">
+    <img class="door-backdrop" id="door-backdrop" src="photos/door-bg.jpg" alt="" aria-hidden="true">
     <div class="door-photo-wrap" id="door-el">
       <img class="door-photo" src="photos/door-bg.jpg" alt="">
       <div class="scratch-wrap" id="scratch-wrap">
@@ -394,6 +409,7 @@
   function populate(){
     document.body.setAttribute('data-theme', CFG.theme || 'classic-ivory');
     $('.door-photo').src = CFG.doorPhoto || 'photos/door-bg.jpg';
+    $('#door-backdrop').src = CFG.doorPhoto || 'photos/door-bg.jpg';
 
     var names = (CFG.partner1||'Jhau') + ' <span class="amp">&amp;</span> ' + (CFG.partner2||'Sheila');
 
@@ -490,6 +506,7 @@
         if(rows && rows[0] && rows[0].data){
           Object.assign(CFG, rows[0].data);
           populate();
+          if(typeof sizeCanvas === 'function'){ sizeCanvas(true); }
         }
       }).catch(function(){ /* keep showing the defaults already rendered */ });
   })();
@@ -523,39 +540,52 @@
   var canvas = $('#scratch-canvas');
   var ctx = canvas.getContext('2d');
   var scratchWrap = $('#scratch-wrap');
+  var doorImgEl = $('.door-photo');
   var revealed = false;
   var canvasW = 0, canvasH = 0;
 
+  // Matches the .scratch-wrap crop in the CSS above (28.2%, 1.7%, 43.6%, 94.5%
+  // of the door photo) — keep these two in sync if the crop ever changes.
+  var DOOR_CROP = { x:.282, y:.017, w:.436, h:.945 };
+
   function drawFoil(){
     var w = canvas.width, h = canvas.height;
-    var g = ctx.createLinearGradient(0,0,0,h);
-    g.addColorStop(0, '#F7F0E1');
-    g.addColorStop(1, '#EDE1C7');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,w,h);
+    ctx.clearRect(0,0,w,h);
 
-    // very light grain so it doesn't look like a flat sticker
-    for(var n=0; n<Math.round(w*h/16); n++){
-      var gx = Math.random()*w, gy = Math.random()*h;
-      ctx.fillStyle = 'rgba(120,90,40,'+(Math.random()*.05)+')';
-      ctx.fillRect(gx, gy, 1, 1);
+    // Paint the same slice of the real door photo here, so before scratching
+    // it looks like the closed door itself — not a sticker covering it.
+    if(doorImgEl && doorImgEl.complete && doorImgEl.naturalWidth){
+      var nw = doorImgEl.naturalWidth, nh = doorImgEl.naturalHeight;
+      try{
+        var pf = getComputedStyle(document.body).getPropertyValue('--photo-filter').trim();
+        ctx.filter = pf || 'none';
+      }catch(e){}
+      ctx.drawImage(doorImgEl, nw*DOOR_CROP.x, nh*DOOR_CROP.y, nw*DOOR_CROP.w, nh*DOOR_CROP.h, 0, 0, w, h);
+      ctx.filter = 'none';
+    } else {
+      var g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0, '#F7F0E1');
+      g.addColorStop(1, '#EDE1C7');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,w,h);
     }
 
-    // soft inner vignette so the circle reads as part of the photo, not a sticker on top
-    var vg = ctx.createRadialGradient(w/2,h/2,h*0.25,w/2,h/2,h*0.52);
-    vg.addColorStop(0,'rgba(0,0,0,0)');
-    vg.addColorStop(1,'rgba(80,58,26,.22)');
+    // Gentle darkening toward the bottom, just enough for the label to read.
+    var vg = ctx.createLinearGradient(0, h*0.56, 0, h*0.82);
+    vg.addColorStop(0, 'rgba(20,14,6,0)');
+    vg.addColorStop(1, 'rgba(20,14,6,.4)');
     ctx.fillStyle = vg;
-    ctx.fillRect(0,0,w,h);
+    ctx.fillRect(0, h*0.5, w, h*0.5);
 
-    // small hand + label, matching the photo's own styling
-    ctx.fillStyle = 'rgba(90,66,30,.65)';
+    // A single, understated line of text — no icon.
     ctx.textAlign = 'center';
-    ctx.font = '400 '+Math.round(h*0.16)+'px sans-serif';
-    ctx.fillText('☝', w/2, h*0.42);
-    ctx.font = '500 '+Math.max(9,Math.round(h*0.072))+'px "Cormorant Garamond", serif';
-    ctx.fillStyle = 'rgba(90,66,30,.7)';
-    ctx.fillText('SCRATCH TO REVEAL', w/2, h*0.62);
+    ctx.font = '500 '+Math.max(10,Math.round(h*0.05))+'px "Cormorant Garamond", serif';
+    ctx.fillStyle = 'rgba(255,252,246,.95)';
+    ctx.shadowColor = 'rgba(0,0,0,.35)';
+    ctx.shadowBlur = Math.round(h*0.02);
+    var label = 'S C R A T C H   T H E   D O O R';
+    ctx.fillText(label, w/2, h*0.765);
+    ctx.shadowBlur = 0;
   }
 
   function sizeCanvas(force){
@@ -568,6 +598,7 @@
     drawFoil();
   }
   sizeCanvas(true);
+  if(doorImgEl){ doorImgEl.addEventListener('load', function(){ sizeCanvas(true); }); }
   var resizeTimer;
   window.addEventListener('resize', function(){
     clearTimeout(resizeTimer);
