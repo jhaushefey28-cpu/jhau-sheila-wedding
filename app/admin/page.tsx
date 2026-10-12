@@ -19,6 +19,7 @@ const ADMIN_PASSWORD = 'JhauSheila2026';
 const THEMES = [
   { value: 'classic-ivory', label: 'Classic Ivory — light, warm gold' },
   { value: 'sage-garden', label: 'Sage Garden — soft green, botanical' },
+  { value: 'sage-blush', label: 'Sage & Blush — sage green, light pink accents' },
   { value: 'dusty-rose', label: 'Dusty Rose — blush pink, romantic' },
   { value: 'emerald-night', label: 'Emerald Night — deep green, dramatic' },
   { value: 'champagne-taupe', label: 'Champagne Taupe — modern neutral' },

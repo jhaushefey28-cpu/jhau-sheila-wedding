@@ -32,6 +32,12 @@
     --gold:#A6923F; --gold-soft:#CBC18C; --pine:#2F4733; --rose:#B4835F;
     --photo-filter: saturate(1.08) hue-rotate(6deg) brightness(1.01);
   }
+  /* Sage & Blush — soft sage green with light pink accents */
+  body[data-theme="sage-blush"]{
+    --ivory:#E9EFE3; --paper:#F6F9F2; --ink:#2E3C2C; --ink-soft:#5B6B55;
+    --gold:#CB8F97; --gold-soft:#EBC7CA; --pine:#71886A; --rose:#E3A9AE;
+    --photo-filter: saturate(1.05) hue-rotate(-4deg) brightness(1.02);
+  }
   /* Dusty Rose — deeper blush with rose-gold, romantic */
   body[data-theme="dusty-rose"]{
     --ivory:#F0D9D6; --paper:#FBEDEA; --ink:#3C2730; --ink-soft:#6E4E58;
@@ -258,15 +264,21 @@
     filter: var(--photo-filter, none);
   }
   #stage-door.open .door-photo-wrap{ transform:scale(1.09); opacity:0; }
+  /* The arch shape only makes sense for the illustrated designs, where we
+     know exactly where the arch sits; an uploaded photo could be of
+     anything, so it keeps the plain rounded-card shape above. */
+  #stage-door[data-door-mode="illustration"] .scratch-wrap{
+    border-radius: 50% 50% 6% 6% / 22% 22% 3% 3%;
+  }
 
   /* Position/size of the scratchable area within whatever is currently
      showing (an illustration or an uploaded photo). Set as CSS custom
      properties by applyDoorCrop() in the script below, which keeps this
      in sync with the canvas crop used to paint the "foil" layer. */
   .scratch-wrap{
-    position:absolute; left:var(--scratch-left,28.2%); top:var(--scratch-top,1.7%);
-    width:var(--scratch-w,43.6%); height:var(--scratch-h,94.5%);
-    border-radius: 50% 50% 6% 6% / 22% 22% 3% 3%;
+    position:absolute; left:var(--scratch-left,3%); top:var(--scratch-top,2%);
+    width:var(--scratch-w,94%); height:var(--scratch-h,96%);
+    border-radius: 10px; /* a plain card for an arbitrary uploaded photo */
     overflow:hidden;
     box-shadow: 0 2px 14px rgba(46,38,32,.35), inset 0 0 0 1px rgba(180,145,63,.4);
     z-index:5;
@@ -460,81 +472,114 @@
     return m;
   }
 
+  // Faint dot texture behind every design, so the paper never reads as a
+  // flat block of color even where there's no ornament.
+  function bgFill(m){
+    return '<defs><pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">'+
+      '<circle cx="13" cy="13" r="1.4" fill="'+m.gold+'" opacity=".16"/></pattern></defs>'+
+      '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+      '<rect width="750" height="1000" fill="url(#dots)"/>';
+  }
+
   function buildFloralArch(m){
     var b=DOOR_ART_BOX, ar=b.w/2, cx=b.x+ar, ct=b.y+ar;
     var outer = doorArchPath(b.x,b.y,b.w,b.h);
     var inner = doorArchPath(b.x+12,b.y+12,b.w-24,b.h-24);
-    var gR = ar+34, n=9, garland='';
+    // Garland sits just inside the arch's own curve (gR < ar) so nothing
+    // it draws can land above DOOR_ART_BOX's top edge and get clipped by
+    // the scratch mask, which only shows the box itself.
+    var gR = ar-30, n=11, garland='';
     for(var i=0;i<n;i++){
-      var t = Math.PI*(0.08+0.84*(i/(n-1)));
+      var t = Math.PI*(0.06+0.88*(i/(n-1)));
       var bx = cx - gR*Math.cos(t), by = ct - gR*Math.sin(t);
       var r = 7 + (i%3===0?4:0);
       var fill = (i%3===0) ? m.rose : (i%2===0 ? m.goldSoft : m.paper);
-      garland += '<g transform="translate('+bx.toFixed(1)+','+by.toFixed(1)+')"><circle r="'+r+'" fill="'+fill+'" stroke="'+m.gold+'" stroke-width="1"/><circle cx="'+(r*.9).toFixed(1)+'" r="'+(r*.55).toFixed(1)+'" fill="'+fill+'" opacity=".85"/><circle cx="'+(-r*.9).toFixed(1)+'" r="'+(r*.55).toFixed(1)+'" fill="'+fill+'" opacity=".85"/></g>';
+      garland += '<g transform="translate('+bx.toFixed(1)+','+by.toFixed(1)+')"><circle r="'+r+'" fill="'+fill+'" stroke="'+m.gold+'" stroke-width="1"/><circle cx="'+(r*.9).toFixed(1)+'" r="'+(r*.55).toFixed(1)+'" fill="'+fill+'" opacity=".85"/><circle cx="'+(-r*.9).toFixed(1)+'" r="'+(r*.55).toFixed(1)+'" fill="'+fill+'" opacity=".85"/><circle cy="'+(-r*.9).toFixed(1)+'" r="'+(r*.5).toFixed(1)+'" fill="'+fill+'" opacity=".8"/></g>';
       if(i<n-1){
-        var t2 = Math.PI*(0.08+0.84*((i+.5)/(n-1)));
-        var lx = cx - (gR-10)*Math.cos(t2), ly = ct - (gR-10)*Math.sin(t2);
+        var t2 = Math.PI*(0.06+0.88*((i+.5)/(n-1)));
+        var lx = cx - (gR-14)*Math.cos(t2), ly = ct - (gR-14)*Math.sin(t2);
         var rot = (-(t2*180/Math.PI)+90);
-        garland += '<ellipse cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" rx="10" ry="4" fill="'+m.pine+'" opacity=".55" transform="rotate('+rot.toFixed(1)+' '+lx.toFixed(1)+' '+ly.toFixed(1)+')"/>';
+        garland += '<ellipse cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" rx="11" ry="4.5" fill="'+m.pine+'" opacity=".55" transform="rotate('+rot.toFixed(1)+' '+lx.toFixed(1)+' '+ly.toFixed(1)+')"/>';
       }
     }
-    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+    // A second, finer scatter of small dots tracing just outside the garland.
+    var sparkle='';
+    for(var j=0;j<14;j++){
+      var ts = Math.PI*(0.04+0.92*(j/13));
+      var sx = cx - (gR+16)*Math.cos(ts), sy = ct - (gR+16)*Math.sin(ts);
+      sparkle += '<circle cx="'+sx.toFixed(1)+'" cy="'+sy.toFixed(1)+'" r="1.6" fill="'+m.gold+'" opacity=".5"/>';
+    }
+    return bgFill(m)+
       '<path d="'+outer+'" fill="'+m.paper+'" stroke="'+m.gold+'" stroke-width="3"/>'+
       '<path d="'+inner+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
-      garland+
+      sparkle+garland+
       '<text x="'+cx+'" y="'+(ct+40)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-size="92" fill="'+m.gold+'" letter-spacing="4">'+xmlesc(m.initials)+'</text>'+
-      '<line x1="'+(cx-56)+'" y1="'+(ct+78)+'" x2="'+(cx+56)+'" y2="'+(ct+78)+'" stroke="'+m.gold+'" stroke-width="1.4"/>'+
-      '<text x="'+cx+'" y="'+(ct+118)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="19" letter-spacing="3" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
-      (m.dateStr ? ('<text x="'+cx+'" y="'+(ct+150)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="15" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
+      '<path d="M'+(cx-70)+' '+(ct+78)+' L'+(cx-14)+' '+(ct+78)+' M'+(cx+14)+' '+(ct+78)+' L'+(cx+70)+' '+(ct+78)+'" stroke="'+m.gold+'" stroke-width="1.4"/>'+
+      '<circle cx="'+cx+'" cy="'+(ct+78)+'" r="3" fill="'+m.gold+'"/>'+
+      '<text x="'+cx+'" y="'+(ct+120)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="19" letter-spacing="3" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
+      (m.dateStr ? ('<text x="'+cx+'" y="'+(ct+152)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="15" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
   }
 
   function buildArtDeco(m){
     var b=DOOR_ART_BOX, cx=b.x+b.w/2;
-    function fan(cy,startDeg,endDeg,rI,rO,count){
+    function fan(cy,startDeg,endDeg,rI,rO,count,sw,op){
       var s='';
       for(var i=0;i<count;i++){
         var t = startDeg + (endDeg-startDeg)*(i/(count-1));
         var rad = t*Math.PI/180;
         var x1=cx+rI*Math.cos(rad), y1=cy+rI*Math.sin(rad);
         var x2=cx+rO*Math.cos(rad), y2=cy+rO*Math.sin(rad);
-        s += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+m.gold+'" stroke-width="1.3"/>';
+        s += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+m.gold+'" stroke-width="'+sw+'" opacity="'+op+'"/>';
       }
       return s;
     }
-    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+    function diamond(x,y,s){
+      return '<path d="M'+x+' '+(y-s)+' L'+(x+s)+' '+y+' L'+x+' '+(y+s)+' L'+(x-s)+' '+y+' Z" fill="none" stroke="'+m.gold+'" stroke-width="1.6"/>';
+    }
+    return bgFill(m)+
       '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="'+m.paper+'" stroke="'+m.gold+'" stroke-width="3"/>'+
       '<rect x="'+(b.x+12)+'" y="'+(b.y+12)+'" width="'+(b.w-24)+'" height="'+(b.h-24)+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
-      fan(b.y+70,20,160,8,62,13)+
-      '<circle cx="'+cx+'" cy="'+(b.y+70)+'" r="4" fill="'+m.gold+'"/>'+
-      fan(b.y+b.h-70,200,340,8,50,11)+
-      '<text x="'+cx+'" y="500" text-anchor="middle" font-family="Jost,sans-serif" font-weight="600" font-size="86" letter-spacing="10" fill="'+m.gold+'">'+xmlesc(m.initials)+'</text>'+
-      '<path d="M'+(cx-46)+' 540 L'+cx+' 554 L'+(cx+46)+' 540" fill="none" stroke="'+m.gold+'" stroke-width="1.4"/>'+
-      '<text x="'+cx+'" y="610" text-anchor="middle" font-family="Jost,sans-serif" font-size="18" letter-spacing="4" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
+      fan(b.y+80,15,165,14,88,17,1.1,.5)+
+      fan(b.y+80,20,160,10,64,13,1.4,1)+
+      diamond(cx,b.y+80,7)+
+      fan(b.y+b.h-80,195,345,12,74,15,1.1,.5)+
+      fan(b.y+b.h-80,200,340,8,50,11,1.4,1)+
+      diamond(cx,b.y+b.h-80,6)+
+      '<text x="'+cx+'" y="505" text-anchor="middle" font-family="Jost,sans-serif" font-weight="600" font-size="86" letter-spacing="10" fill="'+m.gold+'">'+xmlesc(m.initials)+'</text>'+
+      '<path d="M'+(cx-60)+' 545 L'+(cx-16)+' 545 M'+(cx+16)+' 545 L'+(cx+60)+' 545" stroke="'+m.gold+'" stroke-width="1.4"/>'+
+      diamond(cx,545,6)+
+      '<text x="'+cx+'" y="608" text-anchor="middle" font-family="Jost,sans-serif" font-size="18" letter-spacing="4" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
       (m.dateStr ? ('<text x="'+cx+'" y="642" text-anchor="middle" font-family="Jost,sans-serif" font-size="14" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
   }
 
   function buildBotanical(m){
-    var b=DOOR_ART_BOX, cx=b.x+b.w/2, cy=b.y+b.h*0.42, R=150;
-    var leaves='', n=7;
+    var b=DOOR_ART_BOX, cx=b.x+b.w/2, cy=b.y+b.h*0.4, R=148;
+    var leaves='', beads='', n=8;
     for(var i=0;i<n;i++){
       var frac = i/(n-1);
-      var ang = Math.PI*(0.62 + 0.3*frac);
-      var dist = R+6+i*7;
+      var ang = Math.PI*(0.58 + 0.36*frac);
+      var dist = R+8+i*8;
       var lx = cx - dist*Math.cos(ang), ly = cy + dist*Math.sin(ang);
       var rot = (ang*180/Math.PI)+90;
       leaves += '<ellipse cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" rx="13" ry="5" fill="'+m.pine+'" opacity=".6" transform="rotate('+rot.toFixed(1)+' '+lx.toFixed(1)+' '+ly.toFixed(1)+')"/>';
       var rx2 = cx + dist*Math.cos(ang), ry2 = cy + dist*Math.sin(ang);
       leaves += '<ellipse cx="'+rx2.toFixed(1)+'" cy="'+ry2.toFixed(1)+'" rx="13" ry="5" fill="'+m.pine+'" opacity=".6" transform="rotate('+(-rot).toFixed(1)+' '+rx2.toFixed(1)+' '+ry2.toFixed(1)+')"/>';
     }
-    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+    for(var k=0;k<24;k++){
+      var ba = (k/24)*Math.PI*2;
+      var bx2 = cx + (R+20)*Math.cos(ba), by2 = cy + (R+20)*Math.sin(ba);
+      beads += '<circle cx="'+bx2.toFixed(1)+'" cy="'+by2.toFixed(1)+'" r="1.8" fill="'+m.goldSoft+'" opacity=".7"/>';
+    }
+    return bgFill(m)+
       '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="'+m.paper+'"/>'+
       '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
+      beads+
       '<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="'+m.gold+'" stroke-width="2.5"/>'+
       '<circle cx="'+cx+'" cy="'+cy+'" r="'+(R-10)+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
       leaves+
       '<text x="'+cx+'" y="'+(cy+32)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-size="84" fill="'+m.gold+'">'+xmlesc(m.initials)+'</text>'+
-      '<text x="'+cx+'" y="'+(cy+R+70)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="19" letter-spacing="3" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
-      (m.dateStr ? ('<text x="'+cx+'" y="'+(cy+R+102)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="15" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
+      '<text x="'+cx+'" y="'+(cy+R+76)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="19" letter-spacing="3" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
+      (m.dateStr ? ('<text x="'+cx+'" y="'+(cy+R+108)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="15" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
   }
 
   function buildClassicFrame(m){
@@ -543,15 +588,31 @@
     var cTR = '<path d="M'+(b.x+b.w-46)+' '+b.y+' L'+(b.x+b.w)+' '+b.y+' L'+(b.x+b.w)+' '+(b.y+46)+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
     var cBL = '<path d="M'+b.x+' '+(b.y+b.h-46)+' L'+b.x+' '+(b.y+b.h)+' L'+(b.x+46)+' '+(b.y+b.h)+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
     var cBR = '<path d="M'+(b.x+b.w-46)+' '+(b.y+b.h)+' L'+(b.x+b.w)+' '+(b.y+b.h)+' L'+(b.x+b.w)+' '+(b.y+b.h-46)+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
-    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+    // A fine dotted border tracing just inside the panel's own edge.
+    var dots='', per=2*(b.w-40)+2*(b.h-40), step=18, steps=Math.floor(per/step);
+    for(var i=0;i<steps;i++){
+      var d = (i*step)%per, px, py;
+      var w2=b.w-40, h2=b.h-40, x0=b.x+20, y0=b.y+20;
+      if(d < w2){ px=x0+d; py=y0; }
+      else if(d < w2+h2){ px=x0+w2; py=y0+(d-w2); }
+      else if(d < 2*w2+h2){ px=x0+w2-(d-w2-h2); py=y0+h2; }
+      else { px=x0; py=y0+h2-(d-2*w2-h2); }
+      dots += '<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="1.4" fill="'+m.goldSoft+'" opacity=".8"/>';
+    }
+    function sideDiamond(x,y){
+      return '<path d="M'+x+' '+(y-8)+' L'+(x+8)+' '+y+' L'+x+' '+(y+8)+' L'+(x-8)+' '+y+' Z" fill="'+m.gold+'"/>';
+    }
+    return bgFill(m)+
       '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="'+m.paper+'" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
-      cTL+cTR+cBL+cBR+
+      dots+cTL+cTR+cBL+cBR+
+      sideDiamond(b.x+16,b.y+b.h/2)+sideDiamond(b.x+b.w-16,b.y+b.h/2)+
       '<text x="'+cx+'" y="'+(b.y+150)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="16" letter-spacing="5" fill="'+m.ink+'" opacity=".75">THE WEDDING OF</text>'+
       '<text x="'+cx+'" y="'+(b.y+330)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-style="italic" font-size="64" fill="'+m.ink+'">'+xmlesc(m.p1)+'</text>'+
       '<text x="'+cx+'" y="'+(b.y+400)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-size="30" fill="'+m.gold+'">&amp;</text>'+
       '<text x="'+cx+'" y="'+(b.y+475)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-style="italic" font-size="64" fill="'+m.ink+'">'+xmlesc(m.p2)+'</text>'+
-      '<line x1="'+(cx-70)+'" y1="'+(b.y+520)+'" x2="'+(cx+70)+'" y2="'+(b.y+520)+'" stroke="'+m.gold+'" stroke-width="1.4"/>'+
-      (m.dateStr ? ('<text x="'+cx+'" y="'+(b.y+560)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="16" letter-spacing="2" fill="'+m.ink+'" opacity=".8">'+xmlesc(m.dateStr)+'</text>') : '');
+      '<path d="M'+(cx-80)+' '+(b.y+520)+' L'+(cx-14)+' '+(b.y+520)+' M'+(cx+14)+' '+(b.y+520)+' L'+(cx+80)+' '+(b.y+520)+'" stroke="'+m.gold+'" stroke-width="1.4"/>'+
+      sideDiamond(cx,b.y+520)+
+      (m.dateStr ? ('<text x="'+cx+'" y="'+(b.y+562)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="16" letter-spacing="2" fill="'+m.ink+'" opacity=".8">'+xmlesc(m.dateStr)+'</text>') : '');
   }
 
   var DOOR_STYLES = {
@@ -571,13 +632,18 @@
   // Crop fractions shared by the scratch-wrap CSS (as custom properties,
   // set below) and the canvas foil painter further down, so the two
   // always agree on where the "door" sits within whatever is showing.
-  var PHOTO_CROP = { x:.282, y:.017, w:.436, h:.945 }; // calibrated to a real landscape door photo
+  // PHOTO_CROP is deliberately near-full-frame (not a hand-picked sub
+  // region) so an uploaded photo — which could be of anything, not
+  // necessarily an arched door — always lines up exactly with itself
+  // instead of a crop rectangle calibrated to one specific sample photo.
+  var PHOTO_CROP = { x:.03, y:.02, w:.94, h:.96 };
   var ILLUSTRATION_CROP = { x: DOOR_ART_BOX.x/750, y: DOOR_ART_BOX.y/1000, w: DOOR_ART_BOX.w/750, h: DOOR_ART_BOX.h/1000 };
   var DOOR_CROP = PHOTO_CROP;
 
   function applyDoorCrop(mode){
     DOOR_CROP = (mode === 'illustration') ? ILLUSTRATION_CROP : PHOTO_CROP;
     var stage = $('#stage-door');
+    stage.setAttribute('data-door-mode', mode);
     stage.style.setProperty('--scratch-left', (DOOR_CROP.x*100)+'%');
     stage.style.setProperty('--scratch-top', (DOOR_CROP.y*100)+'%');
     stage.style.setProperty('--scratch-w', (DOOR_CROP.w*100)+'%');
@@ -769,22 +835,48 @@
       ctx.fillRect(0,0,w,h);
     }
 
-    // Gentle darkening toward the bottom, just enough for the label to read.
-    var vg = ctx.createLinearGradient(0, h*0.56, 0, h*0.82);
-    vg.addColorStop(0, 'rgba(20,14,6,0)');
-    vg.addColorStop(1, 'rgba(20,14,6,.4)');
+    // Darken the lower third so the label reads — a stronger band than
+    // before, since this now sits over any illustration or photo (light
+    // backgrounds included), not just one pre-tested dark door photo.
+    var vg = ctx.createLinearGradient(0, h*0.56, 0, h);
+    vg.addColorStop(0, 'rgba(18,13,8,0)');
+    vg.addColorStop(0.45, 'rgba(18,13,8,.45)');
+    vg.addColorStop(1, 'rgba(18,13,8,.78)');
     ctx.fillStyle = vg;
     ctx.fillRect(0, h*0.5, w, h*0.5);
 
-    // A single, understated line of text — no icon.
+    // A solid plaque directly behind the label guarantees contrast no
+    // matter how light or busy whatever is underneath is.
     ctx.textAlign = 'center';
-    ctx.font = '500 '+Math.max(10,Math.round(h*0.05))+'px "Cormorant Garamond", serif';
-    ctx.fillStyle = 'rgba(255,252,246,.95)';
-    ctx.shadowColor = 'rgba(0,0,0,.35)';
-    ctx.shadowBlur = Math.round(h*0.02);
-    var label = 'S C R A T C H   T H E   D O O R';
-    ctx.fillText(label, w/2, h*0.765);
+    ctx.textBaseline = 'middle';
+    var fontSize = Math.max(12, Math.round(h*0.042));
+    ctx.font = '600 '+fontSize+'px "Cormorant Garamond", serif';
+    var label = 'S C R A T C H   T O   R E V E A L';
+    var labelY = h*0.84;
+    var textW = ctx.measureText(label).width;
+    var padX = fontSize*0.9, padY = fontSize*0.62;
+    var plaqueW = Math.min(w*0.86, textW + padX*2);
+    var plaqueH = fontSize + padY*2;
+    ctx.fillStyle = 'rgba(16,12,8,.55)';
+    roundRect(ctx, w/2 - plaqueW/2, labelY - plaqueH/2, plaqueW, plaqueH, plaqueH/2);
+    ctx.fill();
+
+    ctx.fillStyle = '#FFFCF6';
+    ctx.shadowColor = 'rgba(0,0,0,.5)';
+    ctx.shadowBlur = Math.round(h*0.015);
+    ctx.fillText(label, w/2, labelY, plaqueW - padX*1.2);
     ctx.shadowBlur = 0;
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
   }
 
   function sizeCanvas(force){

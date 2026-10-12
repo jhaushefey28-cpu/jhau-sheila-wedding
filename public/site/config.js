@@ -31,15 +31,16 @@ window.WEDDING = {
   /* ---- 2b. THEME / "EXPO" ------------------------------------------------
      Pick one by name. Each shifts the whole site's color mood AND gives the
      door photo and your couple photo a matching color-grade (like a camera
-     exposure/filter preset) — six to choose from:
+     exposure/filter preset) — seven to choose from:
        "classic-ivory"     - light, warm ivory & gold (default)
        "sage-garden"       - soft sage green, fresh and botanical
+       "sage-blush"        - soft sage green with light pink accents
        "dusty-rose"        - blush pink & rose gold, romantic
        "emerald-night"     - deep dark green & gold, dramatic and formal
        "champagne-taupe"   - warm modern neutral, understated elegance
        "midnight-gold"     - near-black & gold, formal black-tie evening
   --------------------------------------------------------------------- */
-  theme: "classic-ivory",
+  theme: "sage-blush",
 
   /* ---- 2c. OPENING "DOOR" SCREEN ------------------------------------------
      The scratch-to-reveal screen at the start. You don't need a photo —
