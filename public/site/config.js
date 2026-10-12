@@ -41,10 +41,20 @@ window.WEDDING = {
   --------------------------------------------------------------------- */
   theme: "classic-ivory",
 
-  /* ---- 2c. DOOR PHOTO ----------------------------------------------------
-     The opening "door" screen is your own photo, in the photos folder.
-     Swap the file any time — same filename, or update the path below.
+  /* ---- 2c. OPENING "DOOR" SCREEN ------------------------------------------
+     The scratch-to-reveal screen at the start. You don't need a photo —
+     pick one of these elegant designs and it fills in your initials and
+     names automatically, matching whichever theme you picked above:
+       "floral-arch"     - arch doorway with a garland, initials in the center
+       "art-deco"        - bold geometric fan motif
+       "botanical-ring"  - soft laurel-wreath circle
+       "classic-frame"   - ornate corners, "The Wedding Of" invitation style
+       "photo"           - use your own photo instead (set doorPhoto below)
   --------------------------------------------------------------------- */
+  doorStyle: "floral-arch",
+
+  // Only used when doorStyle is "photo" above. Put the file in the
+  // "photos" folder next to this one.
   doorPhoto: "photos/door-bg.jpg",
 
   /* ---- 3. WELCOME ------------------------------------------------------- */

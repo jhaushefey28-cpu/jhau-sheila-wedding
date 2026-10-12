@@ -240,9 +240,10 @@
   #stage-door.open .door-vignette{ opacity:0; }
   .door-photo-wrap{
     position:relative; z-index:2;
-    width:min(calc(100vw - 56px), calc((100dvh - 56px) * 1100 / 582));
+    --door-ar: .75; /* width/height — JS sets this to the real image's own ratio once it loads */
+    width:min(calc(100vw - 56px), calc((100dvh - 56px) * var(--door-ar)));
     max-height:calc(100dvh - 56px);
-    aspect-ratio:1100/582;
+    aspect-ratio: var(--door-ar);
     overflow:hidden;
     box-shadow:
       0 0 0 10px var(--paper),
@@ -258,13 +259,13 @@
   }
   #stage-door.open .door-photo-wrap{ transform:scale(1.09); opacity:0; }
 
-  /* Sized and positioned to match the door panels in photos/door-bg.jpg
-     itself (the arch, roughly 28%-72% across and 2%-96% down the photo).
-     If you swap in a different door photo with the panels in a different
-     spot, nudge the left/top/width/height % below to match it. */
+  /* Position/size of the scratchable area within whatever is currently
+     showing (an illustration or an uploaded photo). Set as CSS custom
+     properties by applyDoorCrop() in the script below, which keeps this
+     in sync with the canvas crop used to paint the "foil" layer. */
   .scratch-wrap{
-    position:absolute; left:28.2%; top:1.7%;
-    width:43.6%; height:94.5%;
+    position:absolute; left:var(--scratch-left,28.2%); top:var(--scratch-top,1.7%);
+    width:var(--scratch-w,43.6%); height:var(--scratch-h,94.5%);
     border-radius: 50% 50% 6% 6% / 22% 22% 3% 3%;
     overflow:hidden;
     box-shadow: 0 2px 14px rgba(46,38,32,.35), inset 0 0 0 1px rgba(180,145,63,.4);
@@ -426,11 +427,183 @@
     try{ return new Date(dateStr).toLocaleDateString('en-US', opts); }catch(e){ return dateStr; }
   }
 
+  /* ---------------- door artwork (no photo required) ----------------
+     Several elegant, portrait-native "door" covers drawn as vector SVG —
+     colored to match whichever theme is active, and personalized with the
+     couple's own initials/names/date automatically. Chosen via
+     CFG.doorStyle; set it to "photo" to use CFG.doorPhoto instead. */
+  var DOOR_ART_BOX = { x:160, y:70, w:430, h:840 }; // shared "door" bounding box inside the 750x1000 canvas
+
+  function doorThemeColors(){
+    function v(name, fallback){
+      try{ var c = getComputedStyle(document.body).getPropertyValue(name).trim(); return c || fallback; }catch(e){ return fallback; }
+    }
+    return {
+      ink: v('--ink','#2E2620'), gold: v('--gold','#B4913F'), goldSoft: v('--gold-soft','#DCC98F'),
+      paper: v('--paper','#FBF8F1'), ivory: v('--ivory','#F5EFE2'), rose: v('--rose','#A8756A'), pine: v('--pine','#33413A')
+    };
+  }
+  function xmlesc(s){
+    return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; });
+  }
+  function doorArchPath(ax,ay,aw,ah){
+    var ar=aw/2, cx=ax+ar, ct=ay+ar;
+    return 'M'+ax+','+(ay+ah)+' L'+ax+','+ct+' A'+ar+','+ar+' 0 0 1 '+(ax+aw)+','+ct+' L'+(ax+aw)+','+(ay+ah)+' Z';
+  }
+  function doorMeta(){
+    var p1 = CFG.partner1 || 'Jhau', p2 = CFG.partner2 || 'Sheila';
+    var dateStr = '';
+    try{ dateStr = CFG.date ? new Date(CFG.date).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : ''; }catch(e){}
+    var m = doorThemeColors();
+    m.initials = ((p1[0]||'J') + (p2[0]||'S')).toUpperCase();
+    m.p1 = p1; m.p2 = p2; m.dateStr = dateStr;
+    return m;
+  }
+
+  function buildFloralArch(m){
+    var b=DOOR_ART_BOX, ar=b.w/2, cx=b.x+ar, ct=b.y+ar;
+    var outer = doorArchPath(b.x,b.y,b.w,b.h);
+    var inner = doorArchPath(b.x+12,b.y+12,b.w-24,b.h-24);
+    var gR = ar+34, n=9, garland='';
+    for(var i=0;i<n;i++){
+      var t = Math.PI*(0.08+0.84*(i/(n-1)));
+      var bx = cx - gR*Math.cos(t), by = ct - gR*Math.sin(t);
+      var r = 7 + (i%3===0?4:0);
+      var fill = (i%3===0) ? m.rose : (i%2===0 ? m.goldSoft : m.paper);
+      garland += '<g transform="translate('+bx.toFixed(1)+','+by.toFixed(1)+')"><circle r="'+r+'" fill="'+fill+'" stroke="'+m.gold+'" stroke-width="1"/><circle cx="'+(r*.9).toFixed(1)+'" r="'+(r*.55).toFixed(1)+'" fill="'+fill+'" opacity=".85"/><circle cx="'+(-r*.9).toFixed(1)+'" r="'+(r*.55).toFixed(1)+'" fill="'+fill+'" opacity=".85"/></g>';
+      if(i<n-1){
+        var t2 = Math.PI*(0.08+0.84*((i+.5)/(n-1)));
+        var lx = cx - (gR-10)*Math.cos(t2), ly = ct - (gR-10)*Math.sin(t2);
+        var rot = (-(t2*180/Math.PI)+90);
+        garland += '<ellipse cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" rx="10" ry="4" fill="'+m.pine+'" opacity=".55" transform="rotate('+rot.toFixed(1)+' '+lx.toFixed(1)+' '+ly.toFixed(1)+')"/>';
+      }
+    }
+    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+      '<path d="'+outer+'" fill="'+m.paper+'" stroke="'+m.gold+'" stroke-width="3"/>'+
+      '<path d="'+inner+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
+      garland+
+      '<text x="'+cx+'" y="'+(ct+40)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-size="92" fill="'+m.gold+'" letter-spacing="4">'+xmlesc(m.initials)+'</text>'+
+      '<line x1="'+(cx-56)+'" y1="'+(ct+78)+'" x2="'+(cx+56)+'" y2="'+(ct+78)+'" stroke="'+m.gold+'" stroke-width="1.4"/>'+
+      '<text x="'+cx+'" y="'+(ct+118)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="19" letter-spacing="3" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
+      (m.dateStr ? ('<text x="'+cx+'" y="'+(ct+150)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="15" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
+  }
+
+  function buildArtDeco(m){
+    var b=DOOR_ART_BOX, cx=b.x+b.w/2;
+    function fan(cy,startDeg,endDeg,rI,rO,count){
+      var s='';
+      for(var i=0;i<count;i++){
+        var t = startDeg + (endDeg-startDeg)*(i/(count-1));
+        var rad = t*Math.PI/180;
+        var x1=cx+rI*Math.cos(rad), y1=cy+rI*Math.sin(rad);
+        var x2=cx+rO*Math.cos(rad), y2=cy+rO*Math.sin(rad);
+        s += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+m.gold+'" stroke-width="1.3"/>';
+      }
+      return s;
+    }
+    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+      '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="'+m.paper+'" stroke="'+m.gold+'" stroke-width="3"/>'+
+      '<rect x="'+(b.x+12)+'" y="'+(b.y+12)+'" width="'+(b.w-24)+'" height="'+(b.h-24)+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
+      fan(b.y+70,20,160,8,62,13)+
+      '<circle cx="'+cx+'" cy="'+(b.y+70)+'" r="4" fill="'+m.gold+'"/>'+
+      fan(b.y+b.h-70,200,340,8,50,11)+
+      '<text x="'+cx+'" y="500" text-anchor="middle" font-family="Jost,sans-serif" font-weight="600" font-size="86" letter-spacing="10" fill="'+m.gold+'">'+xmlesc(m.initials)+'</text>'+
+      '<path d="M'+(cx-46)+' 540 L'+cx+' 554 L'+(cx+46)+' 540" fill="none" stroke="'+m.gold+'" stroke-width="1.4"/>'+
+      '<text x="'+cx+'" y="610" text-anchor="middle" font-family="Jost,sans-serif" font-size="18" letter-spacing="4" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
+      (m.dateStr ? ('<text x="'+cx+'" y="642" text-anchor="middle" font-family="Jost,sans-serif" font-size="14" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
+  }
+
+  function buildBotanical(m){
+    var b=DOOR_ART_BOX, cx=b.x+b.w/2, cy=b.y+b.h*0.42, R=150;
+    var leaves='', n=7;
+    for(var i=0;i<n;i++){
+      var frac = i/(n-1);
+      var ang = Math.PI*(0.62 + 0.3*frac);
+      var dist = R+6+i*7;
+      var lx = cx - dist*Math.cos(ang), ly = cy + dist*Math.sin(ang);
+      var rot = (ang*180/Math.PI)+90;
+      leaves += '<ellipse cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" rx="13" ry="5" fill="'+m.pine+'" opacity=".6" transform="rotate('+rot.toFixed(1)+' '+lx.toFixed(1)+' '+ly.toFixed(1)+')"/>';
+      var rx2 = cx + dist*Math.cos(ang), ry2 = cy + dist*Math.sin(ang);
+      leaves += '<ellipse cx="'+rx2.toFixed(1)+'" cy="'+ry2.toFixed(1)+'" rx="13" ry="5" fill="'+m.pine+'" opacity=".6" transform="rotate('+(-rot).toFixed(1)+' '+rx2.toFixed(1)+' '+ry2.toFixed(1)+')"/>';
+    }
+    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+      '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="'+m.paper+'"/>'+
+      '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="'+m.gold+'" stroke-width="2.5"/>'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(R-10)+'" fill="none" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
+      leaves+
+      '<text x="'+cx+'" y="'+(cy+32)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-size="84" fill="'+m.gold+'">'+xmlesc(m.initials)+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+R+70)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="19" letter-spacing="3" fill="'+m.ink+'">'+xmlesc((m.p1+' & '+m.p2).toUpperCase())+'</text>'+
+      (m.dateStr ? ('<text x="'+cx+'" y="'+(cy+R+102)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="15" letter-spacing="2" fill="'+m.ink+'" opacity=".75">'+xmlesc(m.dateStr)+'</text>') : '');
+  }
+
+  function buildClassicFrame(m){
+    var b=DOOR_ART_BOX, cx=b.x+b.w/2;
+    var cTL = '<path d="M'+b.x+' '+(b.y+46)+' L'+b.x+' '+b.y+' L'+(b.x+46)+' '+b.y+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
+    var cTR = '<path d="M'+(b.x+b.w-46)+' '+b.y+' L'+(b.x+b.w)+' '+b.y+' L'+(b.x+b.w)+' '+(b.y+46)+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
+    var cBL = '<path d="M'+b.x+' '+(b.y+b.h-46)+' L'+b.x+' '+(b.y+b.h)+' L'+(b.x+46)+' '+(b.y+b.h)+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
+    var cBR = '<path d="M'+(b.x+b.w-46)+' '+(b.y+b.h)+' L'+(b.x+b.w)+' '+(b.y+b.h)+' L'+(b.x+b.w)+' '+(b.y+b.h-46)+'" fill="none" stroke="'+m.gold+'" stroke-width="2.2"/>';
+    return '<rect width="750" height="1000" fill="'+m.ivory+'"/>'+
+      '<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="'+m.paper+'" stroke="'+m.goldSoft+'" stroke-width="1"/>'+
+      cTL+cTR+cBL+cBR+
+      '<text x="'+cx+'" y="'+(b.y+150)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="16" letter-spacing="5" fill="'+m.ink+'" opacity=".75">THE WEDDING OF</text>'+
+      '<text x="'+cx+'" y="'+(b.y+330)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-style="italic" font-size="64" fill="'+m.ink+'">'+xmlesc(m.p1)+'</text>'+
+      '<text x="'+cx+'" y="'+(b.y+400)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-size="30" fill="'+m.gold+'">&amp;</text>'+
+      '<text x="'+cx+'" y="'+(b.y+475)+'" text-anchor="middle" font-family="&apos;Cormorant Garamond&apos;,serif" font-style="italic" font-size="64" fill="'+m.ink+'">'+xmlesc(m.p2)+'</text>'+
+      '<line x1="'+(cx-70)+'" y1="'+(b.y+520)+'" x2="'+(cx+70)+'" y2="'+(b.y+520)+'" stroke="'+m.gold+'" stroke-width="1.4"/>'+
+      (m.dateStr ? ('<text x="'+cx+'" y="'+(b.y+560)+'" text-anchor="middle" font-family="Jost,sans-serif" font-size="16" letter-spacing="2" fill="'+m.ink+'" opacity=".8">'+xmlesc(m.dateStr)+'</text>') : '');
+  }
+
+  var DOOR_STYLES = {
+    'floral-arch':    { build: buildFloralArch },
+    'art-deco':       { build: buildArtDeco },
+    'botanical-ring': { build: buildBotanical },
+    'classic-frame':  { build: buildClassicFrame }
+  };
+
+  function buildDoorIllustrationSrc(styleKey){
+    var style = DOOR_STYLES[styleKey] || DOOR_STYLES['floral-arch'];
+    var inner = style.build(doorMeta());
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1000" viewBox="0 0 750 1000">'+inner+'</svg>';
+    return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
+  }
+
+  // Crop fractions shared by the scratch-wrap CSS (as custom properties,
+  // set below) and the canvas foil painter further down, so the two
+  // always agree on where the "door" sits within whatever is showing.
+  var PHOTO_CROP = { x:.282, y:.017, w:.436, h:.945 }; // calibrated to a real landscape door photo
+  var ILLUSTRATION_CROP = { x: DOOR_ART_BOX.x/750, y: DOOR_ART_BOX.y/1000, w: DOOR_ART_BOX.w/750, h: DOOR_ART_BOX.h/1000 };
+  var DOOR_CROP = PHOTO_CROP;
+
+  function applyDoorCrop(mode){
+    DOOR_CROP = (mode === 'illustration') ? ILLUSTRATION_CROP : PHOTO_CROP;
+    var stage = $('#stage-door');
+    stage.style.setProperty('--scratch-left', (DOOR_CROP.x*100)+'%');
+    stage.style.setProperty('--scratch-top', (DOOR_CROP.y*100)+'%');
+    stage.style.setProperty('--scratch-w', (DOOR_CROP.w*100)+'%');
+    stage.style.setProperty('--scratch-h', (DOOR_CROP.h*100)+'%');
+  }
+
+  function setDoorImage(){
+    var useIllustration = !!(CFG.doorStyle && CFG.doorStyle !== 'photo' && DOOR_STYLES[CFG.doorStyle]);
+    var mode = useIllustration ? 'illustration' : 'photo';
+    var src = useIllustration ? buildDoorIllustrationSrc(CFG.doorStyle) : (CFG.doorPhoto || 'photos/door-bg.jpg');
+    var img = $('.door-photo'), bg = $('#door-backdrop'), wrap = $('.door-photo-wrap');
+    img.src = src; bg.src = src;
+    applyDoorCrop(mode);
+    function onReady(){
+      if(img.naturalWidth && img.naturalHeight){
+        wrap.style.setProperty('--door-ar', (img.naturalWidth/img.naturalHeight).toFixed(4));
+      }
+      if(typeof sizeCanvas === 'function'){ sizeCanvas(true); }
+    }
+    if(img.complete && img.naturalWidth){ onReady(); } else { img.addEventListener('load', onReady, {once:true}); }
+  }
+
   /* ---------------- populate content from config ---------------- */
   function populate(){
     document.body.setAttribute('data-theme', CFG.theme || 'classic-ivory');
-    $('.door-photo').src = CFG.doorPhoto || 'photos/door-bg.jpg';
-    $('#door-backdrop').src = CFG.doorPhoto || 'photos/door-bg.jpg';
+    setDoorImage();
 
     var names = (CFG.partner1||'Jhau') + ' <span class="amp">&amp;</span> ' + (CFG.partner2||'Sheila');
 
@@ -571,10 +744,8 @@
   var doorImgEl = $('.door-photo');
   var revealed = false;
   var canvasW = 0, canvasH = 0;
-
-  // Matches the .scratch-wrap crop in the CSS above (28.2%, 1.7%, 43.6%, 94.5%
-  // of the door photo) — keep these two in sync if the crop ever changes.
-  var DOOR_CROP = { x:.282, y:.017, w:.436, h:.945 };
+  // DOOR_CROP is set above by applyDoorCrop() and kept in sync with the
+  // .scratch-wrap CSS custom properties, for both illustration and photo modes.
 
   function drawFoil(){
     var w = canvas.width, h = canvas.height;

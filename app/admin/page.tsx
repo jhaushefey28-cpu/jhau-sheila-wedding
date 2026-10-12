@@ -25,6 +25,67 @@ const THEMES = [
   { value: 'midnight-gold', label: 'Midnight Gold — black-tie formal' },
 ];
 
+const DOOR_STYLES = [
+  { value: 'floral-arch', label: 'Floral Arch', desc: 'An arch doorway with a garland and your initials — no photo needed.' },
+  { value: 'art-deco', label: 'Art Deco Fan', desc: 'A bold geometric fan motif, modern and formal.' },
+  { value: 'botanical-ring', label: 'Botanical Ring', desc: 'A soft laurel-wreath circle around your initials.' },
+  { value: 'classic-frame', label: 'Classic Frame', desc: 'Ornate corners, "The Wedding Of" invitation style.' },
+  { value: 'photo', label: 'My own photo', desc: 'Upload your own door or venue photo instead.' },
+];
+
+const DOOR_STYLE_ICONS: Record<string, React.ReactNode> = {
+  'floral-arch': (
+    <svg viewBox="0 0 90 120" width="56" height="74">
+      <rect width="90" height="120" fill="#F5EFE2" />
+      <path d="M18 112 L18 45 A27 27 0 0 1 72 45 L72 112 Z" fill="#FBF8F1" stroke="#B4913F" strokeWidth="2" />
+      <circle cx="30" cy="30" r="5" fill="#E4B9AE" stroke="#B4913F" strokeWidth="1" />
+      <circle cx="45" cy="18" r="6" fill="#DCC98F" stroke="#B4913F" strokeWidth="1" />
+      <circle cx="60" cy="30" r="5" fill="#E4B9AE" stroke="#B4913F" strokeWidth="1" />
+      <text x="45" y="80" textAnchor="middle" fontFamily="Georgia, serif" fontSize="22" fill="#B4913F">J&amp;S</text>
+    </svg>
+  ),
+  'art-deco': (
+    <svg viewBox="0 0 90 120" width="56" height="74">
+      <rect width="90" height="120" fill="#F5EFE2" />
+      <rect x="14" y="12" width="62" height="96" fill="#FBF8F1" stroke="#B4913F" strokeWidth="2" />
+      {[20, 40, 60, 80, 100, 120, 140, 160].map((d) => (
+        <line key={d} x1="45" y1="30" x2={45 + 28 * Math.cos((d * Math.PI) / 180)} y2={30 - 28 * Math.sin((d * Math.PI) / 180)} stroke="#B4913F" strokeWidth="1" />
+      ))}
+      <text x="45" y="85" textAnchor="middle" fontFamily="Georgia, serif" fontWeight="bold" fontSize="20" fill="#B4913F" letterSpacing="2">JS</text>
+    </svg>
+  ),
+  'botanical-ring': (
+    <svg viewBox="0 0 90 120" width="56" height="74">
+      <rect width="90" height="120" fill="#F5EFE2" />
+      <rect x="14" y="12" width="62" height="96" fill="#FBF8F1" stroke="#DCC98F" strokeWidth="1" />
+      <circle cx="45" cy="55" r="26" fill="none" stroke="#B4913F" strokeWidth="2" />
+      <text x="45" y="63" textAnchor="middle" fontFamily="Georgia, serif" fontSize="22" fill="#B4913F">J&amp;S</text>
+      <ellipse cx="22" cy="80" rx="8" ry="3" fill="#33413A" opacity=".6" transform="rotate(-30 22 80)" />
+      <ellipse cx="68" cy="80" rx="8" ry="3" fill="#33413A" opacity=".6" transform="rotate(30 68 80)" />
+    </svg>
+  ),
+  'classic-frame': (
+    <svg viewBox="0 0 90 120" width="56" height="74">
+      <rect width="90" height="120" fill="#F5EFE2" />
+      <rect x="14" y="12" width="62" height="96" fill="#FBF8F1" stroke="#DCC98F" strokeWidth="1" />
+      <path d="M18 30 L18 16 L32 16" fill="none" stroke="#B4913F" strokeWidth="2" />
+      <path d="M72 30 L72 16 L58 16" fill="none" stroke="#B4913F" strokeWidth="2" />
+      <path d="M18 90 L18 104 L32 104" fill="none" stroke="#B4913F" strokeWidth="2" />
+      <path d="M72 90 L72 104 L58 104" fill="none" stroke="#B4913F" strokeWidth="2" />
+      <text x="45" y="58" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic" fontSize="17" fill="#2E2620">Jhau</text>
+      <text x="45" y="76" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic" fontSize="17" fill="#2E2620">Sheila</text>
+    </svg>
+  ),
+  photo: (
+    <svg viewBox="0 0 90 120" width="56" height="74">
+      <rect width="90" height="120" fill="#F5EFE2" />
+      <rect x="14" y="12" width="62" height="96" fill="#EDE6D6" stroke="#DCC98F" strokeWidth="1" />
+      <circle cx="35" cy="40" r="9" fill="#DCC98F" />
+      <path d="M18 92 L38 64 L54 80 L64 68 L72 92 Z" fill="#CBB789" />
+    </svg>
+  ),
+};
+
 const ROLE_OPTIONS = [
   { value: 'ninong', label: 'Ninong' },
   { value: 'ninang', label: 'Ninang' },
@@ -68,6 +129,7 @@ type WeddingConfig = {
   faqLede: string;
   faq: FaqItem[];
   contact: { name: string; phone: string; email: string };
+  doorStyle: string;
   doorPhoto: string;
   heroPhoto: string;
   rsvp: {
@@ -94,7 +156,7 @@ const EMPTY_CONFIG: WeddingConfig = {
   attireTitle: '', attireLede: '', attireText: '', attireNote: '', palette: [],
   faqTitle: '', faqLede: '', faq: [],
   contact: { name: '', phone: '', email: '' },
-  doorPhoto: '', heroPhoto: '',
+  doorStyle: 'floral-arch', doorPhoto: '', heroPhoto: '',
   rsvp: { title: '', lede: '', deadline: '', maxGuests: 4, mealOptions: [], askSongRequest: true },
   guestList: [],
 };
@@ -432,18 +494,40 @@ function DetailsTab() {
         {error && <span style={styles.errorText}>{error}</span>}
       </div>
 
-      <Section title="Photos">
+      <Section title="Photos & door style">
         <p style={styles.statLabel}>
-          These photos are stored online, so anyone can use this page to swap theirs in — no file uploads through code needed.
+          The opening "scratch the door" screen doesn&apos;t need a photo — pick one of these elegant designs and it fills in
+          your names and initials automatically, in whichever theme color you choose above. Prefer your own photo? Choose
+          &quot;My own photo&quot; and upload it below.
         </p>
+        <div style={styles.doorStyleGrid}>
+          {DOOR_STYLES.map((d) => (
+            <button
+              key={d.value}
+              type="button"
+              onClick={() => set('doorStyle', d.value)}
+              style={{
+                ...styles.doorStyleCard,
+                ...(cfg.doorStyle === d.value ? styles.doorStyleCardActive : {}),
+              }}
+            >
+              <span style={styles.doorStyleIcon}>{DOOR_STYLE_ICONS[d.value]}</span>
+              <span style={styles.doorStyleLabel}>{d.label}</span>
+              <span style={styles.doorStyleDesc}>{d.desc}</span>
+            </button>
+          ))}
+        </div>
+
         {uploadError && <p style={styles.errorText}>{uploadError}</p>}
         <Row>
-          <PhotoUpload
-            label="Door photo (opening screen)"
-            value={cfg.doorPhoto}
-            uploading={uploading === 'doorPhoto'}
-            onPick={(f) => uploadPhoto(f, 'doorPhoto')}
-          />
+          {cfg.doorStyle === 'photo' && (
+            <PhotoUpload
+              label="Door photo (opening screen)"
+              value={cfg.doorPhoto}
+              uploading={uploading === 'doorPhoto'}
+              onPick={(f) => uploadPhoto(f, 'doorPhoto')}
+            />
+          )}
           <PhotoUpload
             label="Couple photo (revealed by the scratch)"
             value={cfg.heroPhoto}
@@ -739,4 +823,14 @@ const styles: Record<string, React.CSSProperties> = {
   photoBox: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start', marginTop: 6 },
   photoPreview: { width: '100%', maxWidth: 240, aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8, border: '1px solid #ede4d2' },
   photoPlaceholder: { width: '100%', maxWidth: 240, aspectRatio: '4/3', borderRadius: 8, border: '1px dashed #ddd3c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89a82', fontSize: 13 },
+  doorStyleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, margin: '10px 0 18px' },
+  doorStyleCard: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center',
+    background: '#faf7f0', border: '1.5px solid #ede4d2', borderRadius: 10, padding: '14px 10px',
+    cursor: 'pointer', fontFamily: 'inherit',
+  },
+  doorStyleCardActive: { borderColor: '#B4913F', background: '#fbf3df', boxShadow: '0 0 0 1px #B4913F' },
+  doorStyleIcon: { display: 'block', lineHeight: 0 },
+  doorStyleLabel: { fontSize: 13.5, fontWeight: 600, color: '#3a3226' },
+  doorStyleDesc: { fontSize: 11.5, color: '#8a7a5c', lineHeight: 1.4 },
 };
