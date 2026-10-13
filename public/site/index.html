@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Jhau &amp; Sheila — December 27, 2026</title>
+
+<!-- ====================================================================
+     SHARE PREVIEW — shown when this link is pasted in Messenger/FB/Viber.
+     If you reuse this site for a different wedding, update the content="
+     text below (names/date) and the og:image photo. -->
+<meta name="description" content="Jhau &amp; Sheila are getting married on December 27, 2026 — join us and let us know if you can make it.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jhau &amp; Sheila's Wedding — December 27, 2026">
+<meta property="og:description" content="Join us as we celebrate our wedding day. See the details and send your RSVP here.">
+<meta property="og:image" content="https://jhau-sheila-wedding-live.vercel.app/photos/cover.jpg">
+<meta property="og:url" content="https://jhau-sheila-wedding-live.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Jhau &amp; Sheila's Wedding — December 27, 2026">
+<meta name="twitter:description" content="Join us as we celebrate our wedding day. See the details and send your RSVP here.">
+<meta name="twitter:image" content="https://jhau-sheila-wedding-live.vercel.app/photos/cover.jpg">
+<!-- ==================================================================== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -138,6 +154,15 @@
   .amp{color:var(--rose); font-style:italic;}
   .date-line{font-size:1.1rem; color:var(--ink-soft); margin:6px 0 0;}
 
+  .countdown{ display:flex; gap:10px; justify-content:center; margin:24px 0 0; }
+  .cd-box{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-width:58px; padding:10px 6px; border:1px solid var(--line); border-radius:4px;
+    background:var(--paper);
+  }
+  .cd-num{ font-family:'Cormorant Garamond',serif; font-size:1.7rem; color:var(--gold); line-height:1; }
+  .cd-label{ font-size:.66rem; letter-spacing:1px; text-transform:uppercase; color:var(--ink-soft); margin-top:4px; }
+
   button.cta{
     appearance:none; border:1px solid var(--ink);
     background:transparent; color:var(--ink);
@@ -181,6 +206,16 @@
 
   /* ---------- attire ---------- */
   .swatches{display:flex; gap:14px; justify-content:center; margin:22px 0 4px; flex-wrap:wrap;}
+  .gallery-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:16px;
+  }
+  .gallery-grid img{
+    width:100%; height:100%; aspect-ratio:1/1; object-fit:cover; border-radius:3px;
+    filter: var(--photo-filter, none);
+  }
+  .gallery-grid a:first-child img, .gallery-grid img:first-child{
+    grid-column: span 2; grid-row: span 2; aspect-ratio:1/1;
+  }
   .swatch{text-align:center; font-size:.78rem; color:var(--ink-soft);}
   .swatch-dot{width:40px; height:40px; border-radius:50%; margin:0 auto 8px; border:1px solid var(--line);}
 
@@ -299,11 +334,23 @@
     .door-photo-wrap, .stage{transition:none !important;}
   }
 
-  .skip-link{
-    position:fixed; bottom:14px; right:16px; font-size:.72rem; color:var(--ink-soft);
-    opacity:.55; background:none; border:none; cursor:pointer; text-decoration:underline;
-    z-index:20;
+  .floating-controls{
+    position:fixed; bottom:14px; right:16px; z-index:20;
+    display:flex; align-items:center; gap:10px;
   }
+  .skip-link{
+    font-size:.72rem; color:var(--ink-soft);
+    opacity:.55; background:none; border:none; cursor:pointer; text-decoration:underline;
+  }
+  .pill-btn{
+    display:flex; align-items:center; justify-content:center;
+    min-width:30px; height:26px; padding:0 9px;
+    border:1px solid var(--line); border-radius:999px; background:var(--paper);
+    color:var(--ink-soft); font-family:'Jost',sans-serif; font-size:.68rem; letter-spacing:.5px;
+    opacity:.75; cursor:pointer; transition:.2s;
+  }
+  .pill-btn:hover{ opacity:1; border-color:var(--gold); }
+  .pill-btn[aria-pressed="true"]{ color:var(--gold); border-color:var(--gold); opacity:1; }
 </style>
 </head>
 <body>
@@ -332,30 +379,40 @@
       <hr class="rule">
       <p class="date-line" id="w-date"></p>
       <p class="date-line" id="w-loc"></p>
-      <button class="cta" data-next>Continue</button>
+
+      <div class="countdown" id="countdown" style="display:none;">
+        <div class="cd-box"><span class="cd-num" id="cd-days">0</span><span class="cd-label" data-i18n="cd_days">Days</span></div>
+        <div class="cd-box"><span class="cd-num" id="cd-hours">0</span><span class="cd-label" data-i18n="cd_hours">Hours</span></div>
+        <div class="cd-box"><span class="cd-num" id="cd-mins">0</span><span class="cd-label" data-i18n="cd_mins">Minutes</span></div>
+        <div class="cd-box"><span class="cd-num" id="cd-secs">0</span><span class="cd-label" data-i18n="cd_secs">Seconds</span></div>
+      </div>
+
+      <a class="venue-link" id="add-calendar" data-i18n="add_calendar" style="display:none; margin-top:14px;">+ Add to calendar</a>
+
+      <div><button class="cta" data-next data-i18n="continue">Continue</button></div>
     </div>
   </section>
 
   <!-- CHAPTER 2 — CEREMONY -->
   <section class="stage" id="stage-ceremony" data-stage="ceremony">
     <div class="panel">
-      <p class="eyebrow">The Ceremony</p>
+      <p class="eyebrow" data-i18n="eyebrow_ceremony">The Ceremony</p>
       <h2 class="names" style="font-size:2.1rem;" id="c-name"></h2>
       <p class="lede" id="c-addr" style="margin:6px auto 0;"></p>
       <p class="date-line" id="c-time"></p>
-      <a class="venue-link" id="c-map" target="_blank" rel="noopener" style="display:none; margin-top:10px;">View location</a>
-      <div><button class="cta" data-next>Continue</button></div>
+      <a class="venue-link" id="c-map" data-i18n="view_location" target="_blank" rel="noopener" style="display:none; margin-top:10px;">View location</a>
+      <div><button class="cta" data-next data-i18n="continue">Continue</button></div>
     </div>
   </section>
 
   <!-- CHAPTER 3 — SCHEDULE + RECEPTION + ATTIRE + FAQ -->
   <section class="stage" id="stage-reception" data-stage="reception">
     <div class="panel">
-      <p class="eyebrow">The Reception</p>
+      <p class="eyebrow" data-i18n="eyebrow_reception">The Reception</p>
       <h2 class="names" style="font-size:2.1rem;" id="r-name"></h2>
       <p class="lede" id="r-addr" style="margin:6px auto 0;"></p>
       <p class="date-line" id="r-time"></p>
-      <a class="venue-link" id="r-map" target="_blank" rel="noopener" style="display:none; margin-top:10px;">View location</a>
+      <a class="venue-link" id="r-map" data-i18n="view_location" target="_blank" rel="noopener" style="display:none; margin-top:10px;">View location</a>
 
       <hr class="rule">
       <p class="eyebrow" id="s-title"></p>
@@ -367,24 +424,30 @@
       <p class="lede" style="margin:8px auto 0; font-style:italic;" id="a-note"></p>
       <div class="swatches" id="a-swatches"></div>
 
+      <div id="gallery-section" style="display:none;">
+        <hr class="rule">
+        <p class="eyebrow" id="gallery-title"></p>
+        <div class="gallery-grid" id="gallery-grid"></div>
+      </div>
+
       <hr class="rule">
       <p class="eyebrow" id="f-title"></p>
       <div id="faq-list" style="text-align:left;"></div>
 
-      <div><button class="cta" data-next>Continue to RSVP</button></div>
+      <div><button class="cta" data-next data-i18n="continue_rsvp">Continue to RSVP</button></div>
     </div>
   </section>
 
   <!-- CHAPTER 4 — RSVP -->
   <section class="stage" id="stage-rsvp" data-stage="rsvp">
     <div class="panel">
-      <p class="eyebrow" id="rv-eyebrow">Kindly Reply</p>
+      <p class="eyebrow" id="rv-eyebrow" data-i18n="rv_eyebrow">Kindly Reply</p>
       <h2 class="names" style="font-size:2rem;" id="rv-title"></h2>
       <p class="lede" style="margin:6px auto 0;" id="rv-lede"></p>
 
       <form id="rsvp-form">
         <div class="field">
-          <label for="f-name">Your full name</label>
+          <label for="f-name" data-i18n="label_name">Your full name</label>
           <input type="text" id="f-name" required autocomplete="name">
         </div>
 
@@ -398,35 +461,43 @@
 
         <div id="rsvp-extra" style="display:none;">
           <div class="field" id="f-guests-wrap">
-            <label for="f-guests">Total guests attending (including you)</label>
+            <label for="f-guests" data-i18n="label_guests">Total guests attending (including you)</label>
             <input type="number" id="f-guests" min="1" value="1">
           </div>
           <div class="field" id="f-meal-wrap" style="display:none;">
-            <label for="f-meal">Main course preference</label>
+            <label for="f-meal" data-i18n="label_meal">Main course preference</label>
             <select id="f-meal"></select>
           </div>
           <div class="field" id="f-song-wrap" style="display:none;">
-            <label for="f-song">A song that would get you on the dance floor</label>
+            <label for="f-song" data-i18n="label_song">A song that would get you on the dance floor</label>
             <input type="text" id="f-song">
           </div>
           <div class="field">
-            <label for="f-msg">Message for the couple (optional)</label>
+            <label for="f-msg" data-i18n="label_message">Message for the couple (optional)</label>
             <textarea id="f-msg"></textarea>
           </div>
-          <button class="cta gold" type="submit">Send my reply</button>
+          <button class="cta gold" type="submit" data-i18n="btn_send">Send my reply</button>
         </div>
       </form>
       <p id="rsvp-error"></p>
       <div id="rsvp-success">
         <hr class="rule">
-        <p class="lede" style="margin:0 auto;">Thank you. We're so happy to have your reply, and we can't wait to celebrate with you.</p>
+        <p class="lede" style="margin:0 auto;" data-i18n="rsvp_thanks">Thank you. We're so happy to have your reply, and we can't wait to celebrate with you.</p>
       </div>
     </div>
   </section>
 
 </div>
 
-<button class="skip-link" id="skip-btn">Skip intro</button>
+<audio id="bg-audio" loop preload="none"></audio>
+
+<div class="floating-controls">
+  <button class="pill-btn" id="music-toggle" type="button" style="display:none;" aria-pressed="false" aria-label="Play background music">
+    <svg id="music-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+  </button>
+  <button class="pill-btn" id="lang-toggle" type="button">TL</button>
+  <button class="skip-link" id="skip-btn" data-i18n="skip_intro">Skip intro</button>
+</div>
 
 <script>
 (function(){
@@ -435,8 +506,85 @@
   var idx = 0;
 
   function $(sel, root){ return (root||document).querySelector(sel); }
+  function $$(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
   function fmt(dateStr, opts){
     try{ return new Date(dateStr).toLocaleDateString('en-US', opts); }catch(e){ return dateStr; }
+  }
+
+  /* ---------------- English / Tagalog toggle ----------------
+     Only translates the site's own fixed interface chrome (buttons,
+     labels, the RSVP flow) — not anything the couple typed themselves
+     (names, messages, schedule, FAQ), which already shows in whatever
+     language they wrote it in. */
+  var UI_I18N = {
+    en: {
+      rv_eyebrow: 'Kindly Reply', eyebrow_ceremony: 'The Ceremony', eyebrow_reception: 'The Reception',
+      view_location: 'View location', add_calendar: '+ Add to calendar',
+      continue: 'Continue', continue_rsvp: 'Continue to RSVP',
+      label_name: 'Your full name', label_guests: 'Total guests attending (including you)',
+      label_meal: 'Main course preference', label_song: 'A song that would get you on the dance floor',
+      label_message: 'Message for the couple (optional)', btn_send: 'Send my reply',
+      rsvp_thanks: "Thank you. We're so happy to have your reply, and we can't wait to celebrate with you.",
+      skip_intro: 'Skip intro',
+      cd_days: 'Days', cd_hours: 'Hours', cd_mins: 'Minutes', cd_secs: 'Seconds',
+      ask: 'Will you be able to join us?', yes_label: "Yes, I'll be there", no_label: "I'm sorry, I can't make it",
+      err_attend: 'Please let us know if you can attend.', err_name: 'Please enter your name.',
+      err_generic: 'Something went wrong sending your reply. Please try again.',
+      err_not_configured: 'RSVP is not fully configured yet — please contact the couple directly.',
+      scratch_label: 'S C R A T C H   T O   R E V E A L',
+      honor_ninong: "You've been chosen as our Ninong for this special day.",
+      honor_ninang: "You've been chosen as our Ninang for this special day.",
+      honor_principal: "You've been chosen as one of our Principal Sponsors.",
+      honor_secondary: "You've been chosen as one of our Secondary Sponsors.",
+      honor_entourage: "You're part of our wedding entourage — thank you for standing with us.",
+      music_play: 'Play background music', music_pause: 'Pause background music'
+    },
+    tl: {
+      rv_eyebrow: 'Paki-RSVP', eyebrow_ceremony: 'Ang Kasal', eyebrow_reception: 'Ang Reception',
+      view_location: 'Tingnan ang lokasyon', add_calendar: '+ Idagdag sa kalendaryo',
+      continue: 'Magpatuloy', continue_rsvp: 'Magpatuloy sa RSVP',
+      label_name: 'Buong pangalan mo', label_guests: 'Kabuuang bilang ng dadalo (kasama ka)',
+      label_meal: 'Gustong ulam', label_song: 'Kantang magpapasayaw sa iyo',
+      label_message: 'Mensahe para sa couple (optional)', btn_send: 'Ipadala ang sagot ko',
+      rsvp_thanks: 'Salamat! Natutuwa kami sa sagot mo at sabik na sabik na kaming makasama ka sa araw na ito.',
+      skip_intro: 'Laktawan ang intro',
+      cd_days: 'Araw', cd_hours: 'Oras', cd_mins: 'Minuto', cd_secs: 'Segundo',
+      ask: 'Makakasama ka ba namin?', yes_label: 'Oo, dadalo ako', no_label: 'Paumanhin, hindi ako makakadalo',
+      err_attend: 'Paki-sagot muna kung dadalo ka o hindi.', err_name: 'Pakilagay ang iyong pangalan.',
+      err_generic: 'May error sa pagpapadala ng sagot mo. Pakisubukan muli.',
+      err_not_configured: 'Hindi pa handa ang RSVP — pakikontak na lang ang couple nang direkta.',
+      scratch_label: 'K I S K I S I N   P A R A   M A K I T A',
+      honor_ninong: 'Ikaw ang napiling maging Ninong namin sa araw na ito.',
+      honor_ninang: 'Ikaw ang napiling maging Ninang namin sa araw na ito.',
+      honor_principal: 'Ikaw ay isa sa aming mga Principal Sponsor.',
+      honor_secondary: 'Ikaw ay isa sa aming mga Secondary Sponsor.',
+      honor_entourage: 'Bahagi ka ng aming entourage — maraming salamat sa pagsama sa amin.',
+      music_play: 'I-play ang musika', music_pause: 'I-pause ang musika'
+    }
+  };
+  var currentLang = 'en';
+  try{ var savedLang = localStorage.getItem('weddingLang'); if(savedLang === 'tl') currentLang = 'tl'; }catch(e){}
+  function t(key){
+    var d = UI_I18N[currentLang] || UI_I18N.en;
+    return (d && d[key] != null) ? d[key] : (UI_I18N.en[key] || key);
+  }
+  function applyLanguage(lang){
+    currentLang = (lang === 'tl') ? 'tl' : 'en';
+    try{ localStorage.setItem('weddingLang', currentLang); }catch(e){}
+    $$('[data-i18n]').forEach(function(el){ el.textContent = t(el.getAttribute('data-i18n')); });
+    ASK = t('ask'); YES_LABEL = t('yes_label'); NO_LABEL = t('no_label');
+    ROLE_TEXT = {
+      ninong: { honor: t('honor_ninong') }, ninang: { honor: t('honor_ninang') },
+      'principal-sponsor': { honor: t('honor_principal') }, 'secondary-sponsor': { honor: t('honor_secondary') },
+      entourage: { honor: t('honor_entourage') }, family: { honor: '' }, guest: { honor: '' }
+    };
+    var langBtn = $('#lang-toggle'); if(langBtn) langBtn.textContent = currentLang === 'en' ? 'TL' : 'EN';
+    var musicBtn = $('#music-toggle');
+    if(musicBtn){ musicBtn.setAttribute('aria-label', t(musicBtn.getAttribute('aria-pressed') === 'true' ? 'music_pause' : 'music_play')); }
+    if($('#rsvp-error')) $('#rsvp-error').textContent = '';
+    if(typeof setupAddToCalendar === 'function') setupAddToCalendar();
+    if(typeof updateRsvpQuestion === 'function') updateRsvpQuestion();
+    if(typeof sizeCanvas === 'function') sizeCanvas(true);
   }
 
   /* ---------------- door artwork (no photo required) ----------------
@@ -666,6 +814,99 @@
     if(img.complete && img.naturalWidth){ onReady(); } else { img.addEventListener('load', onReady, {once:true}); }
   }
 
+  /* ---------------- countdown + add-to-calendar ---------------- */
+  var countdownTimer = null;
+  function setupCountdown(){
+    var el = $('#countdown');
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    var target = CFG.date ? new Date(CFG.date).getTime() : NaN;
+    if(!target || isNaN(target)){ el.style.display='none'; return; }
+    function tick(){
+      var diff = target - Date.now();
+      if(diff <= 0){
+        el.style.display='none';
+        if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
+        return;
+      }
+      el.style.display='flex';
+      $('#cd-days').textContent = Math.floor(diff/86400000);
+      $('#cd-hours').textContent = Math.floor((diff%86400000)/3600000);
+      $('#cd-mins').textContent = Math.floor((diff%3600000)/60000);
+      $('#cd-secs').textContent = Math.floor((diff%60000)/1000);
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+  }
+
+  function setupAddToCalendar(){
+    var a = $('#add-calendar');
+    var start = CFG.date ? new Date(CFG.date) : null;
+    if(!start || isNaN(start.getTime())){ a.style.display='none'; return; }
+    var end = (CFG.dateEnd && !isNaN(new Date(CFG.dateEnd).getTime())) ? new Date(CFG.dateEnd) : new Date(start.getTime() + 4*3600000);
+    function pad(n){ return (n<10?'0':'')+n; }
+    function toICSDate(d){
+      return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+'Z';
+    }
+    function esc(s){ return String(s||'').replace(/[\\,;]/g, function(c){ return '\\'+c; }).replace(/\n/g,'\\n'); }
+    var venues = CFG.venues || [];
+    var ceremony = venues[0] || {};
+    var title = (CFG.partner1||'Jhau')+' & '+(CFG.partner2||'Sheila')+"'s Wedding";
+    var loc = [ceremony.name, ceremony.address].filter(Boolean).join(', ');
+    var ics = [
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Wedding Site//EN','CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT',
+      'UID:'+Date.now()+'@wedding-invite',
+      'DTSTAMP:'+toICSDate(new Date()),
+      'DTSTART:'+toICSDate(start),
+      'DTEND:'+toICSDate(end),
+      'SUMMARY:'+esc(title),
+      'DESCRIPTION:'+esc(CFG.inviteLine||''),
+      'LOCATION:'+esc(loc),
+      'END:VEVENT','END:VCALENDAR'
+    ].join('\r\n');
+    a.href = 'data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
+    a.setAttribute('download', 'wedding-invite.ics');
+    a.textContent = t('add_calendar');
+    a.style.display = 'inline-block';
+  }
+
+  /* ---------------- background music (optional) ---------------- */
+  function setupBgMusic(){
+    var audio = $('#bg-audio'), btn = $('#music-toggle');
+    if(!audio || !btn) return;
+    var src = CFG.bgMusic || '';
+    if(!src){ btn.style.display='none'; audio.pause(); audio.removeAttribute('src'); return; }
+    if(audio.getAttribute('data-src') !== src){
+      audio.setAttribute('data-src', src);
+      audio.src = src;
+      audio.volume = 0.5;
+      btn.setAttribute('aria-pressed', 'false');
+    }
+    btn.style.display = 'flex';
+    btn.setAttribute('aria-label', t(btn.getAttribute('aria-pressed') === 'true' ? 'music_pause' : 'music_play'));
+  }
+  (function(){
+    var audio = $('#bg-audio'), btn = $('#music-toggle');
+    if(audio && btn){
+      btn.addEventListener('click', function(){
+        if(audio.paused){
+          audio.play().then(function(){
+            btn.setAttribute('aria-pressed','true');
+            btn.setAttribute('aria-label', t('music_pause'));
+          }).catch(function(){});
+        } else {
+          audio.pause();
+          btn.setAttribute('aria-pressed','false');
+          btn.setAttribute('aria-label', t('music_play'));
+        }
+      });
+    }
+  })();
+
+  $('#lang-toggle').addEventListener('click', function(){
+    applyLanguage(currentLang === 'en' ? 'tl' : 'en');
+  });
+
   /* ---------------- populate content from config ---------------- */
   function populate(){
     document.body.setAttribute('data-theme', CFG.theme || 'classic-ivory');
@@ -678,6 +919,8 @@
     $('#w-invite').textContent = CFG.inviteLine || '';
     $('#w-date').textContent = CFG.date ? fmt(CFG.date, {weekday:'long', year:'numeric', month:'long', day:'numeric'}) : '';
     $('#w-loc').textContent = CFG.locationShort || '';
+    setupCountdown();
+    setupAddToCalendar();
 
     var venues = CFG.venues || [];
     var ceremony = venues[0] || {};
@@ -713,6 +956,25 @@
       el.innerHTML = '<div class="swatch-dot" style="background:'+c.hex+'"></div>'+c.name;
       swWrap.appendChild(el);
     });
+
+    $('#gallery-title').textContent = CFG.galleryTitle || '';
+    var galWrap = $('#gallery-grid');
+    galWrap.innerHTML = '';
+    var photos = CFG.photos || [];
+    if(photos.length){
+      photos.forEach(function(p){
+        if(!p || !p.src) return;
+        var img = document.createElement('img');
+        img.src = p.src; img.alt = p.alt || '';
+        img.loading = 'lazy';
+        galWrap.appendChild(img);
+      });
+      $('#gallery-section').style.display = galWrap.children.length ? 'block' : 'none';
+    } else {
+      $('#gallery-section').style.display = 'none';
+    }
+
+    setupBgMusic();
 
     $('#f-title').textContent = CFG.faqTitle || 'Good to Know';
     var faqWrap = $('#faq-list');
@@ -851,7 +1113,7 @@
     ctx.textBaseline = 'middle';
     var fontSize = Math.max(12, Math.round(h*0.042));
     ctx.font = '600 '+fontSize+'px "Cormorant Garamond", serif';
-    var label = 'S C R A T C H   T O   R E V E A L';
+    var label = t('scratch_label');
     var labelY = h*0.84;
     var textW = ctx.measureText(label).width;
     var padX = fontSize*0.9, padY = fontSize*0.62;
@@ -1050,9 +1312,9 @@
   $('#rsvp-form').addEventListener('submit', function(e){
     e.preventDefault();
     var err = $('#rsvp-error'); err.textContent='';
-    if(!attend){ err.textContent='Please let us know if you can attend.'; return; }
+    if(!attend){ err.textContent=t('err_attend'); return; }
     var name = $('#f-name').value.trim();
-    if(!name){ err.textContent='Please enter your name.'; return; }
+    if(!name){ err.textContent=t('err_name'); return; }
 
     var payload = {
       name: name,
@@ -1080,16 +1342,16 @@
     } else if(rsvp.mode === 'webhook' && rsvp.webhookUrl){
       fetch(rsvp.webhookUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
         .then(function(){ showSuccess(); })
-        .catch(function(){ err.textContent = 'Something went wrong sending your reply. Please try again.'; });
+        .catch(function(){ err.textContent = t('err_generic'); });
     } else if(rsvp.mode === 'supabase' && rsvp.supabase && rsvp.supabase.url){
       fetch(rsvp.supabase.url+'/rest/v1/'+(rsvp.supabase.table||'rsvps'), {
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':rsvp.supabase.anonKey,'Authorization':'Bearer '+rsvp.supabase.anonKey,'Prefer':'return=minimal'},
         body: JSON.stringify(payload)
       }).then(function(){ showSuccess(); })
-        .catch(function(){ err.textContent = 'Something went wrong sending your reply. Please try again.'; });
+        .catch(function(){ err.textContent = t('err_generic'); });
     } else {
-      err.textContent = 'RSVP is not fully configured yet — please contact the couple directly.';
+      err.textContent = t('err_not_configured');
     }
   });
 
@@ -1097,6 +1359,8 @@
     $('#rsvp-form').style.display='none';
     $('#rsvp-success').style.display='block';
   }
+
+  applyLanguage(currentLang);
 
   }catch(setupErr){
     // even if the interactive bits fail to wire up, the content above has

@@ -116,6 +116,11 @@ window.WEDDING = {
   galleryTitle: "Our story in pictures",
   photos: [],
 
+  /* ---- 7b. BACKGROUND MUSIC (optional) ----------------------------------
+     A link to an mp3 file. Leave "" to hide the music button entirely.
+     It never plays on its own — guests tap the button to turn it on. */
+  bgMusic: "",
+
   /* ---- 8. QUESTIONS ----------------------------------------------------- */
   faqTitle: "Good to know",
   faqLede: "Answers to the questions we hear most.",

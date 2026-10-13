@@ -133,6 +133,9 @@ type WeddingConfig = {
   doorStyle: string;
   doorPhoto: string;
   heroPhoto: string;
+  galleryTitle: string;
+  photos: { src: string; alt: string }[];
+  bgMusic: string;
   rsvp: {
     title: string;
     lede: string;
@@ -158,6 +161,7 @@ const EMPTY_CONFIG: WeddingConfig = {
   faqTitle: '', faqLede: '', faq: [],
   contact: { name: '', phone: '', email: '' },
   doorStyle: 'floral-arch', doorPhoto: '', heroPhoto: '',
+  galleryTitle: 'Our story in pictures', photos: [], bgMusic: '',
   rsvp: { title: '', lede: '', deadline: '', maxGuests: 4, mealOptions: [], askSongRequest: true },
   guestList: [],
 };
@@ -399,40 +403,57 @@ function DetailsTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedAt, setSavedAt] = useState<string>('');
-  const [uploading, setUploading] = useState<'doorPhoto' | 'heroPhoto' | ''>('');
+  const [uploading, setUploading] = useState<string>('');
   const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     load();
   }, []);
 
-  async function uploadPhoto(file: File, key: 'doorPhoto' | 'heroPhoto') {
-    if (file.size > 8 * 1024 * 1024) {
-      setUploadError('Please choose a photo under 8MB.');
-      return;
+  // Low-level upload used by photos, gallery items, and the music file —
+  // returns the public URL, or null (and sets uploadError) on failure.
+  async function uploadFile(file: File, tag: string, maxMB: number): Promise<string | null> {
+    if (file.size > maxMB * 1024 * 1024) {
+      setUploadError(`Please choose a file under ${maxMB}MB.`);
+      return null;
     }
-    setUploading(key);
+    setUploading(tag);
     setUploadError('');
     try {
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${key}-${Date.now()}.${ext}`;
+      const path = `${tag}-${Date.now()}.${ext}`;
       const res = await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-photos/${path}`, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': file.type || 'image/jpeg',
+          'Content-Type': file.type || 'application/octet-stream',
         },
         body: file,
       });
       if (!res.ok) throw new Error(String(res.status));
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-photos/${path}`;
-      setCfg((c) => ({ ...c, [key]: publicUrl }));
+      return `${SUPABASE_URL}/storage/v1/object/public/wedding-photos/${path}`;
     } catch {
       setUploadError('Upload failed. Please try again.');
+      return null;
     } finally {
       setUploading('');
     }
+  }
+
+  async function uploadPhoto(file: File, key: 'doorPhoto' | 'heroPhoto') {
+    const url = await uploadFile(file, key, 8);
+    if (url) setCfg((c) => ({ ...c, [key]: url }));
+  }
+
+  async function uploadGalleryPhoto(file: File, index: number) {
+    const url = await uploadFile(file, `gallery-${index}`, 8);
+    if (url) setCfg((c) => ({ ...c, photos: patch(c.photos, index, { ...c.photos[index], src: url }) }));
+  }
+
+  async function uploadBgMusic(file: File) {
+    const url = await uploadFile(file, 'bgmusic', 15);
+    if (url) setCfg((c) => ({ ...c, bgMusic: url }));
   }
 
   async function load() {
@@ -669,6 +690,79 @@ function DetailsTab() {
         <AddButton onClick={() => set('guestList', [...cfg.guestList, { name: '', role: 'guest' }])}>+ Add guest</AddButton>
       </Section>
 
+      <Section title="Photo gallery & background music">
+        <p style={styles.statLabel}>
+          Optional extras for the "The Reception" chapter — leave the gallery empty or the music blank to hide either one.
+        </p>
+        <Field label="Gallery section title"><input style={styles.input} value={cfg.galleryTitle} onChange={(e) => set('galleryTitle', e.target.value)} /></Field>
+        {cfg.photos.map((p, i) => (
+          <RepeatRow key={i} onRemove={() => set('photos', cfg.photos.filter((_, j) => j !== i))}>
+            <div style={styles.galleryRow}>
+              {p.src ? (
+                <img src={p.src} alt={p.alt} style={styles.galleryThumb} />
+              ) : (
+                <div style={styles.galleryThumbPlaceholder}>No photo</div>
+              )}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label htmlFor={`gallery-${i}`} style={{ ...styles.secondaryBtn, alignSelf: 'flex-start' }}>
+                  {uploading === `gallery-${i}` ? 'Uploading…' : p.src ? 'Change photo' : 'Upload photo'}
+                </label>
+                <input
+                  id={`gallery-${i}`}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  disabled={uploading === `gallery-${i}`}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadGalleryPhoto(f, i);
+                    e.target.value = '';
+                  }}
+                />
+                <input
+                  style={styles.input}
+                  placeholder="Caption (optional)"
+                  value={p.alt}
+                  onChange={(e) => set('photos', patch(cfg.photos, i, { ...p, alt: e.target.value }))}
+                />
+              </div>
+            </div>
+          </RepeatRow>
+        ))}
+        <AddButton onClick={() => set('photos', [...cfg.photos, { src: '', alt: '' }])}>+ Add gallery photo</AddButton>
+
+        <div style={{ marginTop: 20 }}>
+          <span style={styles.fieldLabel}>Background music (optional, tap to turn on — never plays automatically)</span>
+          <div style={styles.photoBox}>
+            {cfg.bgMusic ? (
+              <audio controls src={cfg.bgMusic} style={{ width: '100%', maxWidth: 320 }} />
+            ) : (
+              <div style={styles.photoPlaceholder}>No music file yet</div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <label htmlFor="bgmusic-upload" style={styles.secondaryBtn}>
+                {uploading === 'bgmusic' ? 'Uploading…' : cfg.bgMusic ? 'Change music' : 'Upload music (mp3)'}
+              </label>
+              {cfg.bgMusic && (
+                <button type="button" style={styles.removeBtn} onClick={() => set('bgMusic', '')}>Remove</button>
+              )}
+            </div>
+            <input
+              id="bgmusic-upload"
+              type="file"
+              accept="audio/*"
+              style={{ display: 'none' }}
+              disabled={uploading === 'bgmusic'}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadBgMusic(f);
+                e.target.value = '';
+              }}
+            />
+          </div>
+        </div>
+      </Section>
+
       <div style={styles.saveBar}>
         <button onClick={save} style={styles.primaryBtn} disabled={saving}>
           {saving ? 'Saving…' : 'Save changes'}
@@ -834,4 +928,7 @@ const styles: Record<string, React.CSSProperties> = {
   doorStyleIcon: { display: 'block', lineHeight: 0 },
   doorStyleLabel: { fontSize: 13.5, fontWeight: 600, color: '#3a3226' },
   doorStyleDesc: { fontSize: 11.5, color: '#8a7a5c', lineHeight: 1.4 },
+  galleryRow: { display: 'flex', gap: 14, alignItems: 'flex-start', width: '100%' },
+  galleryThumb: { width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #ede4d2', flexShrink: 0 },
+  galleryThumbPlaceholder: { width: 96, height: 96, borderRadius: 8, border: '1px dashed #ddd3c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89a82', fontSize: 11, textAlign: 'center', flexShrink: 0 },
 };
