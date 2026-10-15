@@ -118,7 +118,9 @@ window.WEDDING = {
 
   /* ---- 7b. BACKGROUND MUSIC (optional) ----------------------------------
      A link to an mp3 file. Leave "" to hide the music button entirely.
-     It never plays on its own — guests tap the button to turn it on. */
+     It starts itself the moment a guest first taps anywhere on the page
+     (browsers won't allow sound before that); they can mute it with the
+     small music button if they'd rather not have it playing. */
   bgMusic: "",
 
   /* ---- 8. QUESTIONS ----------------------------------------------------- */

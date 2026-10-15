@@ -243,6 +243,41 @@
   #rsvp-error{color:var(--rose); font-size:.85rem; min-height:1.2em; margin-top:8px;}
   #rsvp-success{display:none;}
 
+  /* ---------- rsvp: extra color so this section feels inviting, not flat ---------- */
+  #stage-rsvp{ position:relative; }
+  #stage-rsvp::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:6px;
+    background: linear-gradient(90deg, var(--gold), var(--rose), var(--pine), var(--gold));
+    background-size: 220% 100%;
+    animation: rsvpShimmer 7s linear infinite;
+  }
+  @keyframes rsvpShimmer{ 0%{background-position:0% 0;} 100%{background-position:220% 0;} }
+  #stage-rsvp .field input:focus, #stage-rsvp .field select:focus, #stage-rsvp .field textarea:focus{
+    outline:none; border-color:var(--gold);
+    box-shadow: 0 0 0 3px rgba(180,145,63,.15);
+  }
+  #stage-rsvp .attend-toggle button{ font-weight:500; border-width:1.5px; }
+  #stage-rsvp .attend-toggle button[data-attend="yes"].selected{
+    background: linear-gradient(135deg, var(--gold), var(--rose));
+    border-color: transparent; color:#fff;
+    box-shadow: 0 8px 20px rgba(180,145,63,.35);
+  }
+  #stage-rsvp .attend-toggle button[data-attend="no"].selected{
+    background: var(--rose); border-color:transparent; color:#fff;
+    box-shadow: 0 8px 20px rgba(161,78,92,.3);
+  }
+  #stage-rsvp button.cta.gold{
+    background: linear-gradient(135deg, var(--gold), var(--rose));
+    border-color: transparent; color:#fff;
+    box-shadow: 0 10px 26px rgba(180,145,63,.32);
+  }
+  #stage-rsvp button.cta.gold:hover{
+    background: linear-gradient(135deg, var(--rose), var(--gold));
+    color:#fff; transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(180,145,63,.42);
+  }
+  #rv-honor{ color:var(--rose); font-weight:500; }
+
   /* ---------- door ---------- */
   /* ---------- door (real photo) ---------- */
   #stage-door{
@@ -885,23 +920,44 @@
     btn.style.display = 'flex';
     btn.setAttribute('aria-label', t(btn.getAttribute('aria-pressed') === 'true' ? 'music_pause' : 'music_play'));
   }
+  function startMusic(){
+    var audio = $('#bg-audio'), btn = $('#music-toggle');
+    if(!audio || !btn || !CFG.bgMusic) return;
+    audio.play().then(function(){
+      btn.setAttribute('aria-pressed','true');
+      btn.setAttribute('aria-label', t('music_pause'));
+    }).catch(function(){ /* browser blocked it — the button still works */ });
+  }
+  function pauseMusic(){
+    var audio = $('#bg-audio'), btn = $('#music-toggle');
+    if(!audio || !btn) return;
+    audio.pause();
+    btn.setAttribute('aria-pressed','false');
+    btn.setAttribute('aria-label', t('music_play'));
+  }
   (function(){
     var audio = $('#bg-audio'), btn = $('#music-toggle');
     if(audio && btn){
       btn.addEventListener('click', function(){
-        if(audio.paused){
-          audio.play().then(function(){
-            btn.setAttribute('aria-pressed','true');
-            btn.setAttribute('aria-label', t('music_pause'));
-          }).catch(function(){});
-        } else {
-          audio.pause();
-          btn.setAttribute('aria-pressed','false');
-          btn.setAttribute('aria-label', t('music_play'));
-        }
+        if(audio.paused) startMusic(); else pauseMusic();
       });
     }
   })();
+
+  // Browsers block true autoplay with sound, but they do allow starting
+  // audio right inside the handler for the guest's first tap/key anywhere
+  // on the page — so music starts itself the moment they begin (scratching
+  // the door, tapping Continue, etc.) without needing a separate click on
+  // the music button. If that's blocked too, the button still works.
+  var musicAutoStartTried = false;
+  function tryAutostartMusic(){
+    if(musicAutoStartTried) return;
+    musicAutoStartTried = true;
+    startMusic();
+  }
+  ['pointerdown','touchstart','keydown'].forEach(function(evt){
+    document.addEventListener(evt, tryAutostartMusic, {once:true, passive:true});
+  });
 
   $('#lang-toggle').addEventListener('click', function(){
     applyLanguage(currentLang === 'en' ? 'tl' : 'en');
