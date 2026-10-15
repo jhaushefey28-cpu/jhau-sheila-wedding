@@ -34,6 +34,8 @@
     --gold-soft:#DCC98F;
     --pine:#33413A;
     --rose:#A8756A;
+    --accent-1:#C9A227;
+    --accent-2:#B23A55;
     --line: rgba(46,38,32,0.14);
     --shadow: 0 20px 60px rgba(46,38,32,0.16);
     box-sizing:border-box;
@@ -46,24 +48,28 @@
   body[data-theme="sage-garden"]{
     --ivory:#E6EBDD; --paper:#F4F6EE; --ink:#263326; --ink-soft:#4F5F4C;
     --gold:#A6923F; --gold-soft:#CBC18C; --pine:#2F4733; --rose:#B4835F;
+    --accent-1:#7FA050; --accent-2:#D4A017;
     --photo-filter: saturate(1.08) hue-rotate(6deg) brightness(1.01);
   }
   /* Sage & Blush — soft sage green with light pink accents */
   body[data-theme="sage-blush"]{
     --ivory:#E9EFE3; --paper:#F6F9F2; --ink:#2E3C2C; --ink-soft:#5B6B55;
     --gold:#CB8F97; --gold-soft:#EBC7CA; --pine:#71886A; --rose:#E3A9AE;
+    --accent-1:#5C9360; --accent-2:#E0607D;
     --photo-filter: saturate(1.05) hue-rotate(-4deg) brightness(1.02);
   }
   /* Dusty Rose — deeper blush with rose-gold, romantic */
   body[data-theme="dusty-rose"]{
     --ivory:#F0D9D6; --paper:#FBEDEA; --ink:#3C2730; --ink-soft:#6E4E58;
     --gold:#B97A6E; --gold-soft:#E4B9AE; --pine:#7C4650; --rose:#A14E5C;
+    --accent-1:#C65B6E; --accent-2:#8A5A3D;
     --photo-filter: saturate(1.08) brightness(1.03) hue-rotate(-6deg);
   }
   /* Emerald Night — deep dark green, dramatic and formal */
   body[data-theme="emerald-night"]{
     --ivory:#0F2019; --paper:#17291F; --ink:#EDE7D6; --ink-soft:#B9C4B4;
     --gold:#D2AD5E; --gold-soft:#8C7640; --pine:#0A1510; --rose:#C28A6E;
+    --accent-1:#D2AD5E; --accent-2:#2E8B57;
     --line: rgba(237,231,214,0.16);
     --photo-filter: contrast(1.08) saturate(1.05) brightness(.95) hue-rotate(2deg);
   }
@@ -71,12 +77,14 @@
   body[data-theme="champagne-taupe"]{
     --ivory:#E4DCCF; --paper:#F2ECE1; --ink:#332B22; --ink-soft:#6A5D4C;
     --gold:#9C8057; --gold-soft:#D4C3A6; --pine:#55492F; --rose:#9A765A;
+    --accent-1:#C9A227; --accent-2:#A65D6E;
     --photo-filter: sepia(.08) saturate(.95) brightness(1.02) contrast(1.02);
   }
   /* Midnight Gold — near-black with gold, formal black-tie evening */
   body[data-theme="midnight-gold"]{
     --ivory:#121110; --paper:#1C1916; --ink:#F2E8D6; --ink-soft:#C7BA9C;
     --gold:#D8AF57; --gold-soft:#8E7239; --pine:#0B0A09; --rose:#BE8268;
+    --accent-1:#D8AF57; --accent-2:#9B2242;
     --line: rgba(242,232,214,0.16);
     --photo-filter: grayscale(.2) contrast(1.12) brightness(.9) saturate(.8);
   }
@@ -239,44 +247,44 @@
     font-family:'Jost',sans-serif; font-size:.9rem; cursor:pointer; border-radius:2px;
     transition:.2s;
   }
-  .attend-toggle button.selected{ border-color:var(--gold); background:rgba(180,145,63,.09); color:var(--ink); }
-  #rsvp-error{color:var(--rose); font-size:.85rem; min-height:1.2em; margin-top:8px;}
+  .attend-toggle button.selected{ border-color:var(--accent-1); background:color-mix(in srgb, var(--accent-1) 12%, transparent); color:var(--ink); }
+  #rsvp-error{color:var(--accent-2); font-size:.85rem; min-height:1.2em; margin-top:8px;}
   #rsvp-success{display:none;}
 
   /* ---------- rsvp: extra color so this section feels inviting, not flat ---------- */
   #stage-rsvp{ position:relative; }
   #stage-rsvp::before{
     content:''; position:absolute; top:0; left:0; right:0; height:6px;
-    background: linear-gradient(90deg, var(--gold), var(--rose), var(--pine), var(--gold));
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--accent-1));
     background-size: 220% 100%;
     animation: rsvpShimmer 7s linear infinite;
   }
   @keyframes rsvpShimmer{ 0%{background-position:0% 0;} 100%{background-position:220% 0;} }
   #stage-rsvp .field input:focus, #stage-rsvp .field select:focus, #stage-rsvp .field textarea:focus{
-    outline:none; border-color:var(--gold);
-    box-shadow: 0 0 0 3px rgba(180,145,63,.15);
+    outline:none; border-color:var(--accent-1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-1) 20%, transparent);
   }
   #stage-rsvp .attend-toggle button{ font-weight:500; border-width:1.5px; }
   #stage-rsvp .attend-toggle button[data-attend="yes"].selected{
-    background: linear-gradient(135deg, var(--gold), var(--rose));
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
     border-color: transparent; color:#fff;
-    box-shadow: 0 8px 20px rgba(180,145,63,.35);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-1) 40%, transparent);
   }
   #stage-rsvp .attend-toggle button[data-attend="no"].selected{
-    background: var(--rose); border-color:transparent; color:#fff;
-    box-shadow: 0 8px 20px rgba(161,78,92,.3);
+    background: var(--accent-2); border-color:transparent; color:#fff;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-2) 35%, transparent);
   }
   #stage-rsvp button.cta.gold{
-    background: linear-gradient(135deg, var(--gold), var(--rose));
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
     border-color: transparent; color:#fff;
-    box-shadow: 0 10px 26px rgba(180,145,63,.32);
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-2) 38%, transparent);
   }
   #stage-rsvp button.cta.gold:hover{
-    background: linear-gradient(135deg, var(--rose), var(--gold));
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
     color:#fff; transform: translateY(-1px);
-    box-shadow: 0 14px 30px rgba(180,145,63,.42);
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-2) 45%, transparent);
   }
-  #rv-honor{ color:var(--rose); font-weight:500; }
+  #rv-honor{ color:var(--accent-2); font-weight:500; }
 
   /* ---------- door ---------- */
   /* ---------- door (real photo) ---------- */
