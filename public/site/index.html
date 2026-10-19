@@ -51,12 +51,20 @@
     --accent-1:#7FA050; --accent-2:#D4A017;
     --photo-filter: saturate(1.08) hue-rotate(6deg) brightness(1.01);
   }
-  /* Sage & Blush — soft sage green with light pink accents */
+  /* Sage & Blush — soft sage green with light pink accents.
+     Tuned for contrast: before, the "gold" accent (used site-wide for
+     labels/borders/numbers/CTA) WAS a pale dusty pink almost the same
+     tone as --rose, so the pink repeated everywhere and read as flat
+     and washed out. Now --gold carries a deeper, richer rose-mauve so
+     it actually stands out against the pale backdrop, --pine carries
+     a more saturated sage so the green half of the theme is visible
+     too, and --rose/--accent-2 sit at a clearly different, brighter
+     pink so nothing collapses into one hazy blur. */
   body[data-theme="sage-blush"]{
-    --ivory:#E9EFE3; --paper:#F6F9F2; --ink:#2E3C2C; --ink-soft:#5B6B55;
-    --gold:#CB8F97; --gold-soft:#EBC7CA; --pine:#71886A; --rose:#E3A9AE;
-    --accent-1:#5C9360; --accent-2:#E0607D;
-    --photo-filter: saturate(1.05) hue-rotate(-4deg) brightness(1.02);
+    --ivory:#E3ECDC; --paper:#F7FAF3; --ink:#24311E; --ink-soft:#49593F;
+    --gold:#A85A6F; --gold-soft:#E6BEC7; --pine:#4C7244; --rose:#CE5F82;
+    --accent-1:#4C8A50; --accent-2:#CF4A72;
+    --photo-filter: saturate(1.12) hue-rotate(-4deg) brightness(1.02) contrast(1.03);
   }
   /* Dusty Rose — deeper blush with rose-gold, romantic */
   body[data-theme="dusty-rose"]{
