@@ -185,12 +185,17 @@ window.WEDDING = {
      list is only for the personalized touch, it doesn't block replies.
      Roles you can use: "ninong", "ninang", "principal-sponsor",
      "secondary-sponsor", "entourage", "family", "guest"
+
+     "table" is optional — fill it in and, once that guest confirms
+     "Yes" on the RSVP form, they'll see their table number on the
+     thank-you screen (e.g. "You're seated at Table 5"). Leave it blank
+     for anyone whose table isn't assigned yet; nothing is shown for them.
   --------------------------------------------------------------------- */
   guestList: [
-    { name: "Juan Dela Cruz", role: "ninong" },
-    { name: "Maria Santos", role: "ninang" }
+    { name: "Juan Dela Cruz", role: "ninong", table: "" },
+    { name: "Maria Santos", role: "ninang", table: "" }
     // add one line per guest, e.g.:
-    // { name: "Pedro Reyes", role: "principal-sponsor" },
-    // { name: "Ana Lopez", role: "entourage" },
+    // { name: "Pedro Reyes", role: "principal-sponsor", table: "3" },
+    // { name: "Ana Lopez", role: "entourage", table: "" },
   ]
 };

@@ -101,7 +101,7 @@ type ScheduleItem = { time: string; title: string; note: string };
 type Venue = { label: string; name: string; address: string; time: string; mapUrl: string };
 type PaletteItem = { name: string; hex: string };
 type FaqItem = { q: string; a: string };
-type GuestItem = { name: string; role: string };
+type GuestItem = { name: string; role: string; table?: string };
 
 type WeddingConfig = {
   partner1: string;
@@ -675,9 +675,10 @@ function DetailsTab() {
         </label>
       </Section>
 
-      <Section title="Guest list (for the Ninong / Ninang wording)">
+      <Section title="Guest list (for the Ninong / Ninang wording + table assignment)">
         <p style={styles.statLabel}>
           Add every guest whose invitation should mention a role (Ninong, Ninang, sponsor, entourage). Anyone not listed still gets the normal RSVP question.
+          Table is optional — fill it in and, once that guest confirms "Yes", they'll see their table number on the thank-you screen.
         </p>
         {cfg.guestList.map((g, i) => (
           <RepeatRow key={i} onRemove={() => set('guestList', cfg.guestList.filter((_, j) => j !== i))}>
@@ -685,9 +686,10 @@ function DetailsTab() {
             <select style={styles.input} value={g.role} onChange={(e) => set('guestList', patch(cfg.guestList, i, { ...g, role: e.target.value }))}>
               {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
+            <input style={{ ...styles.input, maxWidth: 100 }} placeholder="Table (optional)" value={g.table || ''} onChange={(e) => set('guestList', patch(cfg.guestList, i, { ...g, table: e.target.value }))} />
           </RepeatRow>
         ))}
-        <AddButton onClick={() => set('guestList', [...cfg.guestList, { name: '', role: 'guest' }])}>+ Add guest</AddButton>
+        <AddButton onClick={() => set('guestList', [...cfg.guestList, { name: '', role: 'guest', table: '' }])}>+ Add guest</AddButton>
       </Section>
 
       <Section title="Photo gallery & background music">

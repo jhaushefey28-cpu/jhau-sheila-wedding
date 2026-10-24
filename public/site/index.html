@@ -534,6 +534,7 @@
       <div id="rsvp-success">
         <hr class="rule">
         <p class="lede" style="margin:0 auto;" data-i18n="rsvp_thanks">Thank you. We're so happy to have your reply, and we can't wait to celebrate with you.</p>
+        <p class="lede" id="rv-table" style="margin:10px auto 0; display:none; font-weight:500; color:var(--gold);"></p>
       </div>
     </div>
   </section>
@@ -576,6 +577,7 @@
       label_meal: 'Main course preference', label_song: 'A song that would get you on the dance floor',
       label_message: 'Message for the couple (optional)', btn_send: 'Send my reply',
       rsvp_thanks: "Thank you. We're so happy to have your reply, and we can't wait to celebrate with you.",
+      rsvp_table: "You're seated at Table {table}.",
       skip_intro: 'Skip intro',
       cd_days: 'Days', cd_hours: 'Hours', cd_mins: 'Minutes', cd_secs: 'Seconds',
       ask: 'Will you be able to join us?', yes_label: "Yes, I'll be there", no_label: "I'm sorry, I can't make it",
@@ -598,6 +600,7 @@
       label_meal: 'Gustong ulam', label_song: 'Kantang magpapasayaw sa iyo',
       label_message: 'Mensahe para sa couple (optional)', btn_send: 'Ipadala ang sagot ko',
       rsvp_thanks: 'Salamat! Natutuwa kami sa sagot mo at sabik na sabik na kaming makasama ka sa araw na ito.',
+      rsvp_table: 'Nakatakda kang maupo sa Table {table}.',
       skip_intro: 'Laktawan ang intro',
       cd_days: 'Araw', cd_hours: 'Oras', cd_mins: 'Minuto', cd_secs: 'Segundo',
       ask: 'Makakasama ka ba namin?', yes_label: 'Oo, dadalo ako', no_label: 'Paumanhin, hindi ako makakadalo',
@@ -619,6 +622,9 @@
     var d = UI_I18N[currentLang] || UI_I18N.en;
     return (d && d[key] != null) ? d[key] : (UI_I18N.en[key] || key);
   }
+  function tTable(tableNum){
+    return t('rsvp_table').replace('{table}', tableNum);
+  }
   function applyLanguage(lang){
     currentLang = (lang === 'tl') ? 'tl' : 'en';
     try{ localStorage.setItem('weddingLang', currentLang); }catch(e){}
@@ -633,6 +639,8 @@
     var musicBtn = $('#music-toggle');
     if(musicBtn){ musicBtn.setAttribute('aria-label', t(musicBtn.getAttribute('aria-pressed') === 'true' ? 'music_pause' : 'music_play')); }
     if($('#rsvp-error')) $('#rsvp-error').textContent = '';
+    var tableEl = $('#rv-table');
+    if(tableEl && tableEl.style.display !== 'none' && currentGuestTable){ tableEl.textContent = tTable(currentGuestTable); }
     if(typeof setupAddToCalendar === 'function') setupAddToCalendar();
     if(typeof updateRsvpQuestion === 'function') updateRsvpQuestion();
     if(typeof sizeCanvas === 'function') sizeCanvas(true);
@@ -1350,6 +1358,7 @@
     var guest = findGuest(nameVal);
     var role = guest ? guest.role : 'guest';
     currentGuestRole = role;
+    currentGuestTable = (guest && guest.table) ? String(guest.table).trim() : '';
     var rt = ROLE_TEXT[role] || ROLE_TEXT.guest;
     var firstName = nameVal.split(' ')[0];
 
@@ -1370,6 +1379,7 @@
 
   var attend = null;
   var currentGuestRole = '';
+  var currentGuestTable = '';
   $('#btn-yes').addEventListener('click', function(){ attend='yes'; setAttend(); });
   $('#btn-no').addEventListener('click', function(){ attend='no'; setAttend(); });
   function setAttend(){
@@ -1430,6 +1440,13 @@
   function showSuccess(){
     $('#rsvp-form').style.display='none';
     $('#rsvp-success').style.display='block';
+    var tableEl = $('#rv-table');
+    if(attend === 'yes' && currentGuestTable){
+      tableEl.textContent = tTable(currentGuestTable);
+      tableEl.style.display = 'block';
+    } else {
+      tableEl.style.display = 'none';
+    }
   }
 
   applyLanguage(currentLang);
