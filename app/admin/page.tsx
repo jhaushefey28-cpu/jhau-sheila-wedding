@@ -1,8 +1,9 @@
 'use client';
 
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
+import QRCode from 'qrcode';
 
 // Same project the public site reads from / writes to
 // (public/site/config.js and public/site/index.html).
@@ -205,7 +206,7 @@ export default function Admin() {
   const [unlocked, setUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [tab, setTab] = useState<'rsvps' | 'details'>('rsvps');
+  const [tab, setTab] = useState<'rsvps' | 'details' | 'share'>('rsvps');
 
   useEffect(() => {
     try {
@@ -271,9 +272,15 @@ export default function Admin() {
           >
             Edit Wedding Details
           </button>
+          <button
+            onClick={() => setTab('share')}
+            style={tab === 'share' ? styles.tabActive : styles.tab}
+          >
+            Share / QR Code
+          </button>
         </div>
 
-        {tab === 'rsvps' ? <RsvpTab /> : <DetailsTab />}
+        {tab === 'rsvps' ? <RsvpTab /> : tab === 'details' ? <DetailsTab /> : <ShareTab />}
       </div>
     </main>
   );
@@ -381,6 +388,204 @@ function RsvpTab() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------- Share tab ------------------------------
+   A printable/shareable QR code card: scanning it opens this exact
+   site (wherever it's actually deployed — window.location.origin, so
+   this works unchanged if this admin page is ever reused for a
+   different wedding on a different domain). Generated entirely in the
+   browser (the "qrcode" package), composited onto a nicer card with
+   the couple's names/date, then downloadable as a PNG to paste into
+   printed invitations, Messenger, or anywhere else. */
+
+function ShareTab() {
+  const [names, setNames] = useState({ partner1: '', partner2: '', date: '' });
+  const [loading, setLoading] = useState(true);
+  const [siteUrl, setSiteUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const [cardError, setCardError] = useState('');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    setSiteUrl(window.location.origin + '/');
+    (async () => {
+      try {
+        const res = await sb('/rest/v1/wedding_config?id=eq.default&select=data');
+        const rows = await res.json();
+        const d = rows[0]?.data || {};
+        setNames({ partner1: d.partner1 || '', partner2: d.partner2 || '', date: d.date || '' });
+      } catch {
+        // Card still works without names/date — it just shows the link.
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  function formatCardDate(iso: string) {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return '';
+    }
+  }
+
+  async function buildCard() {
+    if (!siteUrl || !canvasRef.current) return;
+    setBuilding(true);
+    setCardError('');
+    try {
+      const qrDataUrl = await QRCode.toDataURL(siteUrl, {
+        width: 640,
+        margin: 1,
+        color: { dark: '#2E2620FF', light: '#FFFFFFFF' },
+      });
+      const qrImg = new Image();
+      await new Promise<void>((resolve, reject) => {
+        qrImg.onload = () => resolve();
+        qrImg.onerror = () => reject(new Error('qr image load failed'));
+        qrImg.src = qrDataUrl;
+      });
+
+      const W = 900, H = 1125;
+      const canvas = canvasRef.current;
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d')!;
+
+      // Background
+      ctx.fillStyle = '#FBF8F1';
+      ctx.fillRect(0, 0, W, H);
+
+      // Outer frame
+      ctx.strokeStyle = '#B4913F';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(28, 28, W - 56, H - 56);
+      ctx.strokeStyle = 'rgba(180,145,63,0.45)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(40, 40, W - 80, H - 80);
+
+      ctx.textAlign = 'center';
+
+      // Eyebrow
+      ctx.fillStyle = '#B4913F';
+      ctx.font = '22px Georgia, serif';
+      ctx.fillText('S C A N   T O   R S V P', W / 2, 140);
+
+      // Couple names
+      const coupleLine = [names.partner1, names.partner2].filter(Boolean).join(' & ') || 'Scan to view our invitation';
+      ctx.fillStyle = '#2E2620';
+      ctx.font = '56px Georgia, serif';
+      ctx.fillText(coupleLine, W / 2, 215);
+
+      // Date
+      const dateLine = formatCardDate(names.date);
+      if (dateLine) {
+        ctx.fillStyle = '#5B5147';
+        ctx.font = '26px Georgia, serif';
+        ctx.fillText(dateLine, W / 2, 258);
+      }
+
+      // Thin rule
+      ctx.strokeStyle = '#DCC98F';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 70, 295);
+      ctx.lineTo(W / 2 + 70, 295);
+      ctx.stroke();
+
+      // QR, centered, with a white card + thin border behind it
+      const qrSize = 520;
+      const qrX = (W - qrSize) / 2;
+      const qrY = 345;
+      const pad = 24;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2);
+      ctx.strokeStyle = '#ECE2C9';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2);
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+      // Caption under the QR
+      ctx.fillStyle = '#5B5147';
+      ctx.font = '22px Georgia, serif';
+      ctx.fillText("We can't wait to celebrate with you!", W / 2, qrY + qrSize + 70);
+
+      // Fallback link text, in case the scan fails
+      ctx.fillStyle = '#8a7a5c';
+      ctx.font = '18px Georgia, serif';
+      ctx.fillText(siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''), W / 2, qrY + qrSize + 104);
+    } catch {
+      setCardError('Could not generate the QR card. Please try again.');
+    } finally {
+      setBuilding(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!loading && siteUrl) buildCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, siteUrl, names.partner1, names.partner2, names.date]);
+
+  function downloadCard() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'wedding-qr-invite.png';
+    a.click();
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(siteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCardError('Could not copy automatically — please copy the link by hand.');
+    }
+  }
+
+  return (
+    <div>
+      <div style={styles.section}>
+        <h2 style={styles.sectionTitle}>Share your invite</h2>
+        <p style={styles.statLabel}>
+          Guests scan this to open your invitation and RSVP directly — no need to type or paste the link.
+          Download it as an image to send in chat, print on physical invitation cards, or post at the venue.
+        </p>
+
+        {loading ? (
+          <p style={styles.statLabel}>Loading…</p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0' }}>
+              <input style={{ ...styles.input, flex: '1 1 260px' }} readOnly value={siteUrl} onFocus={(e) => e.currentTarget.select()} />
+              <button type="button" style={styles.secondaryBtn} onClick={copyLink}>{copied ? 'Copied!' : 'Copy link'}</button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '18px 0' }}>
+              <canvas
+                ref={canvasRef}
+                style={{ width: '100%', maxWidth: 420, height: 'auto', borderRadius: 10, boxShadow: '0 8px 30px rgba(0,0,0,.08)' }}
+              />
+            </div>
+
+            {cardError && <p style={styles.errorText}>{cardError}</p>}
+
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" style={styles.primaryBtn} onClick={downloadCard} disabled={building}>
+                {building ? 'Preparing…' : 'Download QR Code (PNG)'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
