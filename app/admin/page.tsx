@@ -4,6 +4,7 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode';
+import { buildWorkbookSpec, mergeGuests, parseGuestRows, type SheetSpec } from './guestExcel';
 
 // Same project the public site reads from / writes to
 // (public/site/config.js and public/site/index.html).
@@ -284,6 +285,27 @@ export default function Admin() {
       </div>
     </main>
   );
+}
+
+/* Turns the plain workbook description from guestExcel.ts into a SheetJS
+   sheet (formula cells keep their pre-computed value so previews work). */
+function specToWorksheet(sh: SheetSpec): XLSX.WorkSheet {
+  const ws: XLSX.WorkSheet = {};
+  let maxR = 0, maxC = 0;
+  sh.rows.forEach((row, r) =>
+    row.forEach((cell, c) => {
+      if (cell.v === undefined && !cell.f) return;
+      const v = cell.v === undefined ? '' : cell.v;
+      const obj: XLSX.CellObject = { t: typeof v === 'number' ? 'n' : 's', v };
+      if (cell.f) obj.f = cell.f;
+      ws[XLSX.utils.encode_cell({ r, c })] = obj;
+      maxR = Math.max(maxR, r);
+      maxC = Math.max(maxC, c);
+    })
+  );
+  ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxR, c: maxC } });
+  ws['!cols'] = sh.widths.map((wch) => ({ wch }));
+  return ws;
 }
 
 /* ----------------------------- RSVP tab ----------------------------- */
@@ -610,10 +632,63 @@ function DetailsTab() {
   const [savedAt, setSavedAt] = useState<string>('');
   const [uploading, setUploading] = useState<string>('');
   const [uploadError, setUploadError] = useState('');
+  const [guestMsg, setGuestMsg] = useState('');
+  const [guestBusy, setGuestBusy] = useState(false);
+  const [replaceOnImport, setReplaceOnImport] = useState(false);
 
   useEffect(() => {
     load();
   }, []);
+
+  // Download the guest workbook: Guest List + RSVP Replies + Summary, with
+  // live Yes / No / Pending formulas (see guestExcel.ts).
+  async function downloadGuestWorkbook() {
+    setGuestBusy(true);
+    setGuestMsg('');
+    try {
+      const res = await sb('/rest/v1/rsvps?select=*&order=created_at.desc');
+      if (!res.ok) throw new Error(String(res.status));
+      const replies: Rsvp[] = await res.json();
+      const spec = buildWorkbookSpec(cfg.guestList, replies, ROLE_OPTIONS, formatDate);
+      const wb = XLSX.utils.book_new();
+      spec.forEach((sh) => XLSX.utils.book_append_sheet(wb, specToWorksheet(sh), sh.name));
+      const today = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `jhau-sheila-guest-list-${today}.xlsx`);
+      setGuestMsg('Downloaded. Open it in Excel — the Yes / No columns fill in by themselves.');
+    } catch {
+      setGuestMsg('Could not build the workbook (could not load the replies). Please try again.');
+    } finally {
+      setGuestBusy(false);
+    }
+  }
+
+  // Read a filled-in Excel/CSV file into the guest list (not saved until
+  // the person presses "Save changes").
+  async function importGuestExcel(file: File) {
+    setGuestBusy(true);
+    setGuestMsg('');
+    try {
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const sheetName = wb.SheetNames.includes('Guest List') ? 'Guest List' : wb.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[sheetName], { header: 1, raw: true, defval: '' });
+      const parsed = parseGuestRows(rows, ROLE_OPTIONS);
+      if (parsed.guests.length === 0) {
+        setGuestMsg('No guest names found. The first columns should be Name, Role, Table (see the downloaded workbook).');
+        return;
+      }
+      const merged = mergeGuests(cfg.guestList, parsed.guests, replaceOnImport);
+      set('guestList', merged.list);
+      let msg = replaceOnImport
+        ? `Imported ${merged.added} guests (replaced the old list).`
+        : `Imported: ${merged.added} new, ${merged.updated} updated.`;
+      if (parsed.unknownRoles.length) msg += ` Unknown role treated as Guest: ${parsed.unknownRoles.join(', ')}.`;
+      setGuestMsg(msg + ' Press "Save changes" to publish.');
+    } catch {
+      setGuestMsg('Could not read that file. Please use an .xlsx or .csv file.');
+    } finally {
+      setGuestBusy(false);
+    }
+  }
 
   // Low-level upload used by photos, gallery items, and the music file —
   // returns the public URL, or null (and sets uploadError) on failure.
@@ -895,6 +970,37 @@ function DetailsTab() {
           </RepeatRow>
         ))}
         <AddButton onClick={() => set('guestList', [...cfg.guestList, { name: '', role: 'guest', table: '' }])}>+ Add guest</AddButton>
+
+        <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid #e6dfd0' }}>
+          <p style={styles.statLabel}>
+            <strong>Excel:</strong> make the guest list once in Excel (Name, Role, Table) and upload it here instead of typing each guest.
+            The downloaded workbook also counts Yes / No / Pending for you with formulas.
+          </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
+            <button type="button" style={styles.secondaryBtn} onClick={downloadGuestWorkbook} disabled={guestBusy}>
+              Download guest workbook (.xlsx)
+            </button>
+            <label htmlFor="guest-import" style={styles.secondaryBtn}>
+              {guestBusy ? 'Working…' : 'Import from Excel'}
+            </label>
+            <input
+              id="guest-import"
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f) importGuestExcel(f);
+              }}
+            />
+          </div>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
+            <input type="checkbox" checked={replaceOnImport} onChange={(e) => setReplaceOnImport(e.target.checked)} />
+            Replace the whole list when importing (otherwise names are added / updated)
+          </label>
+          {guestMsg && <p style={{ ...styles.statLabel, marginTop: 10 }}>{guestMsg}</p>}
+        </div>
       </Section>
 
       <Section title="Photo gallery & background music">
