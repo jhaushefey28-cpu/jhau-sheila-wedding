@@ -11,6 +11,7 @@ const SITE_URL = 'https://jhau-sheila-wedding-live.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  icons: { icon: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ccircle%20cx='32'%20cy='32'%20r='30'%20fill='%234C7244'/%3E%3Ctext%20x='32'%20y='41'%20font-family='Georgia%2Cserif'%20font-size='26'%20font-style='italic'%20text-anchor='middle'%20fill='%23F7FAF3'%3EJ%26amp%3BS%3C/text%3E%3C/svg%3E" },
   title: "Jhau & Sheila's Wedding — December 27, 2026",
   description:
     'Jhau & Sheila are getting married on December 27, 2026 — join us and let us know if you can make it.',

@@ -207,6 +207,7 @@ export default function Admin() {
   const [unlocked, setUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [tab, setTab] = useState<'rsvps' | 'details' | 'share'>('rsvps');
 
   useEffect(() => {
@@ -235,13 +236,18 @@ export default function Admin() {
           <h1 style={styles.lockTitle}>Jhau &amp; Sheila — Admin</h1>
           <p style={styles.lockSub}>Enter the admin password to continue.</p>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoFocus
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}
             placeholder="Password"
+            autoComplete="current-password"
             style={styles.input}
           />
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14, margin: '10px 0', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
+            Show password
+          </label>
           {passwordError && <p style={styles.errorText}>{passwordError}</p>}
           <button type="submit" style={styles.primaryBtn}>Unlock</button>
         </form>
