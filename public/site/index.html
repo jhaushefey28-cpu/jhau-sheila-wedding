@@ -206,9 +206,9 @@
 
   /* ---------- schedule ---------- */
   .sched-list{ text-align:left; margin:30px auto 0; max-width:380px; }
-  .sched-item{ display:grid; grid-template-columns:74px 1fr; gap:16px; padding:14px 0; border-top:1px solid var(--line); }
+  .sched-item{ display:grid; grid-template-columns:96px 1fr; gap:14px; padding:14px 0; border-top:1px solid var(--line); }
   .sched-item:last-child{border-bottom:1px solid var(--line);}
-  .sched-time{font-family:'Cormorant Garamond',serif; font-size:1.1rem; color:var(--gold); white-space:nowrap;}
+  .sched-time{font-family:'Cormorant Garamond',serif; font-size:1.05rem; line-height:1.25; color:var(--gold); white-space:nowrap;} /* a range like "4:00 PM – 4:29 PM" is split onto two lines in JS */
   .sched-title{font-size:.98rem;}
   .sched-note{font-size:.85rem; color:var(--ink-soft); margin-top:3px;}
 
@@ -1022,7 +1022,8 @@
     (CFG.schedule||[]).forEach(function(item){
       var el = document.createElement('div');
       el.className='sched-item';
-      el.innerHTML = '<div class="sched-time">'+item.time+'</div><div><div class="sched-title">'+item.title+'</div>'+(item.note?'<div class="sched-note">'+item.note+'</div>':'')+'</div>';
+      var timeHtml = String(item.time||'').replace(/\s+[\u2013\u2014-]\s+/, '<br>\u2013 '); /* "4:00 PM – 4:29 PM" -> two tidy lines */
+      el.innerHTML = '<div class="sched-time">'+timeHtml+'</div><div><div class="sched-title">'+item.title+'</div>'+(item.note?'<div class="sched-note">'+item.note+'</div>':'')+'</div>';
       schedWrap.appendChild(el);
     });
 
