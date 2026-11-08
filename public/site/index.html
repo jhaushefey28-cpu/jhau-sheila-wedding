@@ -1366,14 +1366,11 @@
     }
     var tk = nameTokens(input);
     if(!tk.length) return null;
+    // full name required: every word of the listed name must be typed
+    // (any order, extra middle name/initial OK, one-letter typo OK in long words)
     for(var k=0;k<list.length;k++){
       var lt = nameTokens(list[k].name);
-      if(!lt.length) continue;
-      if(lt.length === 1){
-        if(hasToken(tk, lt[0])) return list[k];
-      } else if(tk.length >= 2 && (containsAll(lt, tk) || containsAll(tk, lt))){
-        return list[k];
-      }
+      if(lt.length && containsAll(lt, tk)) return list[k];
     }
     return null;
   }
