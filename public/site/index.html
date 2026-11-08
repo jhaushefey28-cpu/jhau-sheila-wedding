@@ -503,6 +503,7 @@
           <input type="text" id="f-name" required autocomplete="name">
         </div>
 
+        <p class="lede" id="rv-notfound" style="margin:12px auto 0; display:none; font-size:.95rem; color:var(--accent-2);"></p>
         <p class="lede" id="rv-honor" style="margin:16px auto 0; display:none; font-style:italic;"></p>
         <p class="lede" id="rv-question" style="margin:10px auto 18px; display:none;"></p>
 
@@ -579,6 +580,7 @@
       label_message: 'Message for the couple (optional)', btn_send: 'Send my reply',
       rsvp_thanks: "Thank you. We're so happy to have your reply, and we can't wait to celebrate with you.",
       rsvp_table: "You're seated at Table {table}.",
+      rsvp_notfound: "We can't find this name yet. Please type your full name exactly as written on your invitation.",
       skip_intro: 'Skip intro',
       cd_days: 'Days', cd_hours: 'Hours', cd_mins: 'Minutes', cd_secs: 'Seconds',
       ask: 'Will you be able to join us?', yes_label: "Yes, I'll be there", no_label: "I'm sorry, I can't make it",
@@ -602,6 +604,7 @@
       label_message: 'Mensahe para sa couple (optional)', btn_send: 'Ipadala ang sagot ko',
       rsvp_thanks: 'Salamat! Natutuwa kami sa sagot mo at sabik na sabik na kaming makasama ka sa araw na ito.',
       rsvp_table: 'Nakatakda kang maupo sa Table {table}.',
+      rsvp_notfound: 'Hindi pa namin mahanap ang pangalang ito. Pakisulat ang buong pangalan mo ayon sa nakasulat sa iyong imbitasyon.',
       skip_intro: 'Laktawan ang intro',
       cd_days: 'Araw', cd_hours: 'Oras', cd_mins: 'Minuto', cd_secs: 'Segundo',
       ask: 'Makakasama ka ba namin?', yes_label: 'Oo, dadalo ako', no_label: 'Paumanhin, hindi ako makakadalo',
@@ -1334,6 +1337,26 @@
   var NO_LABEL = "I'm sorry, I can't make it";
 
   function normalizeName(s){ return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+  // ---- guest-name matching -------------------------------------------
+  // Word-by-word, order-free, forgiving of a middle name/initial and of a
+  // one-letter typo in longer words. A single typed first name is NOT enough
+  // for a guest listed with a surname (people would otherwise match by
+  // typing just "an" or "angel").
+  function nameTokens(str){
+    return normalizeName(str).replace(/[^\p{L}\p{N} ]/gu,'').split(' ').filter(Boolean);
+  }
+  function lev(a,b){
+    var m=a.length,n=b.length,d=[],i,j;
+    for(i=0;i<=m;i++){ d[i]=[i]; }
+    for(j=1;j<=n;j++){ d[0][j]=j; }
+    for(i=1;i<=m;i++){ for(j=1;j<=n;j++){
+      d[i][j]=Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));
+    }}
+    return d[m][n];
+  }
+  function tokEq(a,b){ return a===b || (a.length>=5 && b.length>=5 && lev(a,b)<=1); }
+  function hasToken(list,tok){ for(var i=0;i<list.length;i++){ if(tokEq(list[i],tok)) return true; } return false; }
+  function containsAll(small,big){ for(var i=0;i<small.length;i++){ if(!hasToken(big,small[i])) return false; } return true; }
   function findGuest(input){
     var n = normalizeName(input);
     if(!n || n.length < 2) return null;
@@ -1341,23 +1364,51 @@
     for(var i=0;i<list.length;i++){
       if(normalizeName(list[i].name) === n) return list[i];
     }
-    for(var i=0;i<list.length;i++){
-      var ln = normalizeName(list[i].name);
-      if(ln.indexOf(n) !== -1 || n.indexOf(ln) !== -1) return list[i];
+    var tk = nameTokens(input);
+    if(!tk.length) return null;
+    for(var k=0;k<list.length;k++){
+      var lt = nameTokens(list[k].name);
+      if(!lt.length) continue;
+      if(lt.length === 1){
+        if(hasToken(tk, lt[0])) return list[k];
+      } else if(tk.length >= 2 && (containsAll(lt, tk) || containsAll(tk, lt))){
+        return list[k];
+      }
     }
     return null;
+  }
+  // Only people on the guest list may reply (turned off automatically when
+  // the list is empty, or with rsvp.guestListOnly:false in config.js).
+  function guestListOnly(){
+    var list = CFG.guestList || [], r = CFG.rsvp || {};
+    var any = false;
+    for(var i=0;i<list.length;i++){ if(normalizeName(list[i].name)){ any = true; break; } }
+    return any && r.guestListOnly !== false;
   }
 
   function updateRsvpQuestion(){
     var nameVal = $('#f-name').value.trim();
     var honorEl = $('#rv-honor'), qEl = $('#rv-question'), toggleEl = $('#attend-toggle');
     if(nameVal.length < 2){
+      $('#rv-notfound').style.display='none';
       honorEl.style.display='none';
       qEl.style.display='none';
       toggleEl.style.display='none';
       return;
     }
     var guest = findGuest(nameVal);
+    var nfEl = $('#rv-notfound');
+    if(guestListOnly() && !guest){
+      currentGuestRole = ''; currentGuestTable = '';
+      attend = null;
+      $('#btn-yes').classList.remove('selected'); $('#btn-no').classList.remove('selected');
+      $('#rsvp-extra').style.display='none';
+      honorEl.style.display='none'; qEl.style.display='none'; toggleEl.style.display='none';
+      if(nameVal.length >= 3){ nfEl.textContent = t('rsvp_notfound'); nfEl.style.display='block'; }
+      else { nfEl.style.display='none'; }
+      return;
+    }
+    nfEl.style.display='none';
     var role = guest ? guest.role : 'guest';
     currentGuestRole = role;
     currentGuestTable = (guest && guest.table) ? String(guest.table).trim() : '';
@@ -1399,6 +1450,9 @@
     if(!attend){ err.textContent=t('err_attend'); return; }
     var name = $('#f-name').value.trim();
     if(!name){ err.textContent=t('err_name'); return; }
+    var matched = findGuest(name);
+    if(guestListOnly() && !matched){ err.textContent = t('rsvp_notfound'); return; }
+    if(matched){ name = matched.name; } // use the guest-list spelling so the Excel Yes/No lookup matches
 
     var payload = {
       name: name,
@@ -1425,14 +1479,14 @@
       showSuccess();
     } else if(rsvp.mode === 'webhook' && rsvp.webhookUrl){
       fetch(rsvp.webhookUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
-        .then(function(){ showSuccess(); })
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); showSuccess(); })
         .catch(function(){ err.textContent = t('err_generic'); });
     } else if(rsvp.mode === 'supabase' && rsvp.supabase && rsvp.supabase.url){
       fetch(rsvp.supabase.url+'/rest/v1/'+(rsvp.supabase.table||'rsvps'), {
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':rsvp.supabase.anonKey,'Authorization':'Bearer '+rsvp.supabase.anonKey,'Prefer':'return=minimal'},
         body: JSON.stringify(payload)
-      }).then(function(){ showSuccess(); })
+      }).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); showSuccess(); }) // never show "thank you" if it was not actually saved
         .catch(function(){ err.textContent = t('err_generic'); });
     } else {
       err.textContent = t('err_not_configured');

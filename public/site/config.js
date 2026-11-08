@@ -156,6 +156,7 @@ window.WEDDING = {
     lede: "Let us know if you can join us. Your reply helps us plan seating and dinner.",
     deadline: "2026-11-27",     // YYYY-MM-DD
     maxGuests: 4,               // most guests one reply can include
+    guestListOnly: true,        // true = only names on the guest list (section 10) can reply
 
     // Optional main course choices. Leave [] to skip the question.
     mealOptions: [],            // e.g. ["Beef", "Fish", "Vegetarian"]
@@ -181,8 +182,9 @@ window.WEDDING = {
      name on the RSVP screen that matches (small typos/missing middle
      names are OK — matching is loose), the question changes to fit them,
      e.g. "Juan, will you be our Ninong?" with matching Yes/No wording.
-     Anyone NOT on this list still gets the normal RSVP question — this
-     list is only for the personalized touch, it doesn't block replies.
+     When this list has at least one name, ONLY people on it can reply:
+     anyone else sees "We can't find this name yet". To let anyone reply
+     again, leave this list empty or set rsvp.guestListOnly to false.
      Roles you can use: "ninong", "ninang", "principal-sponsor",
      "secondary-sponsor", "entourage", "family", "guest"
 
