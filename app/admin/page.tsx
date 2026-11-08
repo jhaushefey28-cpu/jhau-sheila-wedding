@@ -1015,15 +1015,15 @@ function DetailsTab() {
         </p>
         <Field label="Gallery section title"><input style={styles.input} value={cfg.galleryTitle} onChange={(e) => set('galleryTitle', e.target.value)} /></Field>
         {cfg.photos.map((p, i) => (
-          <RepeatRow key={i} onRemove={() => set('photos', cfg.photos.filter((_, j) => j !== i))}>
+          <div key={i} style={styles.galleryCard}>
             <div style={styles.galleryRow}>
               {p.src ? (
                 <img src={p.src} alt={p.alt} style={styles.galleryThumb} />
               ) : (
                 <div style={styles.galleryThumbPlaceholder}>No photo</div>
               )}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label htmlFor={`gallery-${i}`} style={{ ...styles.secondaryBtn, alignSelf: 'flex-start' }}>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <label htmlFor={`gallery-${i}`} style={styles.secondaryBtn}>
                   {uploading === `gallery-${i}` ? 'Uploading…' : p.src ? 'Change photo' : 'Upload photo'}
                 </label>
                 <input
@@ -1039,16 +1039,19 @@ function DetailsTab() {
                   }}
                 />
                 <input
-                  style={styles.input}
+                  style={{ ...styles.input, textAlign: 'center' }}
                   placeholder="Caption (optional)"
                   value={p.alt}
                   onChange={(e) => set('photos', patch(cfg.photos, i, { ...p, alt: e.target.value }))}
                 />
               </div>
             </div>
-          </RepeatRow>
+            <button type="button" style={styles.removeBtn} onClick={() => set('photos', cfg.photos.filter((_, j) => j !== i))}>Remove photo</button>
+          </div>
         ))}
-        <AddButton onClick={() => set('photos', [...cfg.photos, { src: '', alt: '' }])}>+ Add gallery photo</AddButton>
+        <div style={{ textAlign: 'center' }}>
+          <AddButton onClick={() => set('photos', [...cfg.photos, { src: '', alt: '' }])}>+ Add gallery photo</AddButton>
+        </div>
 
         <div style={{ marginTop: 20 }}>
           <span style={styles.fieldLabel}>Background music (optional, tap to turn on — never plays automatically)</span>
@@ -1058,7 +1061,7 @@ function DetailsTab() {
             ) : (
               <div style={styles.photoPlaceholder}>No music file yet</div>
             )}
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
               <label htmlFor="bgmusic-upload" style={styles.secondaryBtn}>
                 {uploading === 'bgmusic' ? 'Uploading…' : cfg.bgMusic ? 'Change music' : 'Upload music (mp3)'}
               </label>
@@ -1105,7 +1108,7 @@ function PhotoUpload({
 }) {
   const inputId = 'photo-' + label.replace(/\W+/g, '-');
   return (
-    <div style={{ flex: '1 1 220px' }}>
+    <div style={{ flex: '1 1 220px', textAlign: 'center' }}>
       <span style={styles.fieldLabel}>{label}</span>
       <div style={styles.photoBox}>
         {value ? (
@@ -1212,7 +1215,7 @@ const styles: Record<string, React.CSSProperties> = {
   tabActive: { background: 'none', border: 'none', borderBottom: '2px solid #2d2722', padding: '10px 4px', marginRight: 20, fontSize: 15, color: '#2d2722', cursor: 'pointer', fontFamily: 'inherit' },
   headerActions: { display: 'flex', gap: 10, marginBottom: 20 },
   primaryBtn: { background: '#2d2722', color: '#f6f1e7', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 14, cursor: 'pointer' },
-  secondaryBtn: { background: '#fff', color: '#2d2722', border: '1px solid #ddd3c2', borderRadius: 8, padding: '12px 20px', fontSize: 14, cursor: 'pointer' },
+  secondaryBtn: { background: '#fff', color: '#2d2722', border: '1px solid #ddd3c2', borderRadius: 8, padding: '12px 20px', fontSize: 14, cursor: 'pointer', textAlign: 'center' },
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 26 },
   statCard: { background: '#fff', border: '1px solid #ede4d2', borderRadius: 10, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 4 },
   statNum: { fontSize: 28, color: '#2d2722' },
@@ -1234,7 +1237,7 @@ const styles: Record<string, React.CSSProperties> = {
   removeBtn: { background: 'none', border: '1px solid #e2cfcf', color: '#a23b3b', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' },
   addBtn: { background: 'none', border: '1px dashed #c9b893', color: '#8a7a5c', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer', marginTop: 4 },
   venueBox: { background: '#faf7f0', border: '1px solid #f2ebdd', borderRadius: 8, padding: 16, marginBottom: 14 },
-  photoBox: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start', marginTop: 6 },
+  photoBox: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', textAlign: 'center', marginTop: 6 },
   photoPreview: { width: '100%', maxWidth: 240, aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8, border: '1px solid #ede4d2' },
   photoPlaceholder: { width: '100%', maxWidth: 240, aspectRatio: '4/3', borderRadius: 8, border: '1px dashed #ddd3c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89a82', fontSize: 13 },
   doorStyleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, margin: '10px 0 18px' },
@@ -1247,7 +1250,8 @@ const styles: Record<string, React.CSSProperties> = {
   doorStyleIcon: { display: 'block', lineHeight: 0 },
   doorStyleLabel: { fontSize: 13.5, fontWeight: 600, color: '#3a3226' },
   doorStyleDesc: { fontSize: 11.5, color: '#8a7a5c', lineHeight: 1.4 },
-  galleryRow: { display: 'flex', gap: 14, alignItems: 'flex-start', width: '100%' },
-  galleryThumb: { width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #ede4d2', flexShrink: 0 },
-  galleryThumbPlaceholder: { width: 96, height: 96, borderRadius: 8, border: '1px dashed #ddd3c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89a82', fontSize: 11, textAlign: 'center', flexShrink: 0 },
+  galleryCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: '#faf7f0', border: '1px solid #f2ebdd', borderRadius: 10, padding: 16, marginBottom: 14 },
+  galleryRow: { display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', width: '100%' },
+  galleryThumb: { width: 140, height: 140, objectFit: 'cover', borderRadius: 8, border: '1px solid #ede4d2', flexShrink: 0 },
+  galleryThumbPlaceholder: { width: 140, height: 140, borderRadius: 8, border: '1px dashed #ddd3c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a89a82', fontSize: 11, textAlign: 'center', flexShrink: 0 },
 };
