@@ -586,6 +586,7 @@
       ask: 'Will you be able to join us?', yes_label: "Yes, I'll be there", no_label: "I'm sorry, I can't make it",
       err_attend: 'Please let us know if you can attend.', err_name: 'Please enter your name.',
       err_generic: 'Something went wrong sending your reply. Please try again.',
+      err_duplicate: 'We already have your reply. Thank you! If you need to change it, please message Jhau or Sheila.',
       err_not_configured: 'RSVP is not fully configured yet — please contact the couple directly.',
       scratch_label: 'S C R A T C H   T O   R E V E A L',
       honor_ninong: "You've been chosen as our Ninong for this special day.",
@@ -610,6 +611,7 @@
       ask: 'Makakasama ka ba namin?', yes_label: 'Oo, dadalo ako', no_label: 'Paumanhin, hindi ako makakadalo',
       err_attend: 'Paki-sagot muna kung dadalo ka o hindi.', err_name: 'Pakilagay ang iyong pangalan.',
       err_generic: 'May error sa pagpapadala ng sagot mo. Pakisubukan muli.',
+      err_duplicate: 'Natanggap na namin ang sagot mo. Salamat! Kung may babaguhin, mag-message lang kina Jhau o Sheila.',
       err_not_configured: 'Hindi pa handa ang RSVP — pakikontak na lang ang couple nang direkta.',
       scratch_label: 'K I S K I S I N   P A R A   M A K I T A',
       honor_ninong: 'Ikaw ang napiling maging Ninong namin sa araw na ito.',
@@ -1441,9 +1443,11 @@
     $('#f-song-wrap').style.display = (attend==='yes' && CFG.rsvp && CFG.rsvp.askSongRequest) ? 'block':'none';
   }
 
+  var sending = false;
   $('#rsvp-form').addEventListener('submit', function(e){
     e.preventDefault();
     var err = $('#rsvp-error'); err.textContent='';
+    if(sending) return; // ignore double-clicks
     if(!attend){ err.textContent=t('err_attend'); return; }
     var name = $('#f-name').value.trim();
     if(!name){ err.textContent=t('err_name'); return; }
@@ -1483,8 +1487,12 @@
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':rsvp.supabase.anonKey,'Authorization':'Bearer '+rsvp.supabase.anonKey,'Prefer':'return=minimal'},
         body: JSON.stringify(payload)
-      }).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); showSuccess(); }) // never show "thank you" if it was not actually saved
-        .catch(function(){ err.textContent = t('err_generic'); });
+      }).then(function(r){
+        if(r.status === 409){ var d = new Error('duplicate'); d.dup = true; throw d; } // already replied (one reply per name)
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        showSuccess(); // never show "thank you" if it was not actually saved
+      }).catch(function(e){ sending = false; err.textContent = t(e && e.dup ? 'err_duplicate' : 'err_generic'); });
+      sending = true;
     } else {
       err.textContent = t('err_not_configured');
     }
